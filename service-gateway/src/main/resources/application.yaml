@@ -1,0 +1,27 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: service-gateway
+  cloud:
+    gateway:
+      mvc:
+        routes:
+          - id: mama-salama-backend
+            uri: lb://mama-salama
+            predicates:
+              - Path=/api/**
+          - id: mama-salama-ai
+            uri: lb://mama-salama-ai
+            predicates:
+              - Path=/ai/**
+            filters:
+              - StripPrefix=1
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
