@@ -1,5 +1,6 @@
+import json
 from typing import Optional
-from fastapi import APIRouter, HTTPException, Request, UploadFile, File
+from fastapi import APIRouter, Form, HTTPException, Request, UploadFile, File
 from pydantic import BaseModel
 
 router = APIRouter()
@@ -52,6 +53,13 @@ class IngestResponse(BaseModel):
     indexed: int
 
 
+class VoiceChatResponse(BaseModel):
+    transcription: str
+    answer: str
+    source: str
+    rag_available: bool
+
+
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest, req: Request):
     chain = req.app.state.chain
@@ -100,6 +108,53 @@ async def ingest_pdf(req: Request, file: UploadFile = File(...)):
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"PDF ingestion failed: {exc}")
+
+
+@router.post("/voice-chat", response_model=VoiceChatResponse)
+async def voice_chat(
+    req: Request,
+    file: UploadFile = File(...),
+    language: str = Form("fr"),
+    patient_context: Optional[str] = Form(None),
+    alert_context: Optional[str] = Form(None),
+):
+    settings = req.app.state.settings
+    chain = req.app.state.chain
+    rag = req.app.state.rag
+
+    if not settings.openai_api_key:
+        raise HTTPException(status_code=503, detail="OpenAI API key not configured")
+
+    from openai import AsyncOpenAI
+    client = AsyncOpenAI(api_key=settings.openai_api_key)
+
+    audio_bytes = await file.read()
+    try:
+        transcription_resp = await client.audio.transcriptions.create(
+            model="whisper-1",
+            file=(file.filename or "audio.webm", audio_bytes),
+        )
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Transcription failed: {exc}")
+
+    transcription = transcription_resp.text
+
+    p_ctx = json.loads(patient_context) if patient_context else None
+    a_ctx = json.loads(alert_context) if alert_context else None
+
+    answer = await chain.invoke(
+        question=transcription,
+        language=language,
+        patient_context=p_ctx,
+        alert_context=a_ctx,
+    )
+
+    return VoiceChatResponse(
+        transcription=transcription,
+        answer=answer,
+        source=f"Whisper-1 + {settings.openai_model} + ChromaDB RAG",
+        rag_available=rag.ready,
+    )
 
 
 @router.get("/health")
