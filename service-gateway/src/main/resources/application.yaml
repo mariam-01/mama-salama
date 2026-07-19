@@ -7,17 +7,29 @@ spring:
   cloud:
     gateway:
       mvc:
+        globalcors:
+          cors-configurations:
+            '[/**]':
+              allowedOriginPatterns:
+                - "*"
+              allowedMethods:
+                - "*"
+              allowedHeaders:
+                - "*"
+              allowCredentials: true
         routes:
-          - id: mama-salama-backend
-            uri: lb://mama-salama
+          - id: mama-salama-core
+            uri: lb://mama-salama-core
             predicates:
-              - Path=/api/**
+              - Path=/api/core/**
+            filters:
+              - StripPrefix=2
           - id: mama-salama-ai
             uri: lb://mama-salama-ai
             predicates:
-              - Path=/ai/**
+              - Path=/api/ai/**
             filters:
-              - StripPrefix=1
+              - StripPrefix=2
 
 eureka:
   client:
