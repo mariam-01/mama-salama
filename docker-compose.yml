@@ -1,0 +1,121 @@
+services:
+
+  # ── PostgreSQL ────────────────────────────────────────────────────────────────
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: mama_salama_db
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d mama_salama_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mama-net
+
+  # ── Eureka (service-discovery) ────────────────────────────────────────────────
+  eureka:
+    build:
+      context: ./service-discovery
+    ports:
+      - "8761:8761"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8761/actuator/health | grep UP || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 8
+    networks:
+      - mama-net
+
+  # ── Spring Boot backend ───────────────────────────────────────────────────────
+  mama-salama-core:
+    build:
+      context: ./mama-salama-backend
+    ports:
+      - "8081:8081"
+    environment:
+      # Database — override localhost with the postgres container name
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/mama_salama_db
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      # Service discovery — use container name instead of localhost
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+      # Secrets (read from root .env)
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      TWILIO_ACCOUNT_SID: ${TWILIO_ACCOUNT_SID}
+      TWILIO_AUTH_TOKEN: ${TWILIO_AUTH_TOKEN}
+      TWILIO_PHONE_NUMBER: ${TWILIO_PHONE_NUMBER}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      eureka:
+        condition: service_healthy
+    networks:
+      - mama-net
+
+  # ── API Gateway ───────────────────────────────────────────────────────────────
+  gateway:
+    build:
+      context: ./service-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
+    depends_on:
+      eureka:
+        condition: service_healthy
+    networks:
+      - mama-net
+
+  # ── Python AI service (FastAPI + ChromaDB) ────────────────────────────────────
+  ai:
+    build:
+      context: ./mama-salama-ai
+    ports:
+      - "8000:8000"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      OPENAI_MODEL: ${OPENAI_MODEL:-gpt-4o-mini}
+      # Point to the eureka container, not host.docker.internal
+      EUREKA_SERVER: http://eureka:8761/eureka/
+      # Register with the Docker service name so other containers can reach us
+      EUREKA_INSTANCE_HOST: ai
+      PORT: 8000
+    volumes:
+      - chroma_data:/app/chroma_db
+    depends_on:
+      eureka:
+        condition: service_healthy
+    networks:
+      - mama-net
+
+  # ── Frontend (React + Nginx) ──────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ../mama-salama-frontend
+    ports:
+      - "80:80"
+    environment:
+      BACKEND_URL: http://gateway:8080
+    depends_on:
+      - gateway
+    networks:
+      - mama-net
+
+volumes:
+  postgres_data:
+  chroma_data:
+
+networks:
+  mama-net:
+    driver: bridge
