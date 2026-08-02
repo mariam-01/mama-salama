@@ -40,6 +40,10 @@ public class PatientProfile extends AbstractEntity {
 
     private String region;
 
+    private String city;
+
+    private String province;
+
     private Integer pregnancyWeek;
 
     private Integer pregnancyWeekCalculated;
