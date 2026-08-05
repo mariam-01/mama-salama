@@ -49,6 +49,9 @@ dependencies {
     // .env file support
     implementation 'me.paulschwarz:spring-dotenv:4.0.0'
 
+    // MinIO object storage
+    implementation 'io.minio:minio:8.5.12'
+
     // OpenAPI / Swagger
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.8.8'
 
