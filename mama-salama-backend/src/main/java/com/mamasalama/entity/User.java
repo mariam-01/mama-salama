@@ -33,9 +33,13 @@ public class User extends AbstractEntity implements UserDetails {
 
     private String phone;
 
+    private String fullName;
+
     private String city;
 
     private String province;
+
+    private String hospital;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
