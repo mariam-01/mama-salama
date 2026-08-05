@@ -49,6 +49,41 @@ public class EmailService {
         }
     }
 
+    private String buildInfoHtml(String titleFr, String titleAr, String bodyFr, String bodyAr, String accentColor) {
+        return """
+            <!DOCTYPE html>
+            <html lang="fr">
+            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+            <body style="margin:0;padding:0;background-color:#F7F3EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+              <table width="100%%" cellpadding="0" cellspacing="0" style="background:#F7F3EE;padding:40px 16px;">
+                <tr><td align="center">
+                  <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(194,97,122,0.10);">
+                    <tr>
+                      <td align="center" style="background:#ffffff;padding:28px 32px 20px;border-bottom:3px solid %s;">
+                        <img src="cid:mamasalama-logo" alt="Mama Salama" style="max-width:320px;width:100%%;height:auto;display:block;margin:0 auto;" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:36px 40px 32px;">
+                        <h2 style="margin:0 0 4px;font-size:18px;color:#3D2B34;">%s</h2>
+                        <p style="margin:0 0 20px;font-size:13px;color:#A08898;direction:rtl;">%s</p>
+                        <p style="margin:0 0 12px;font-size:15px;color:#5C4A50;line-height:1.7;">%s</p>
+                        <p style="margin:0;font-size:14px;color:#A08898;direction:rtl;line-height:1.7;">%s</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="background:#F7F3EE;padding:20px 32px;border-top:1px solid #EDE8E3;">
+                        <p style="margin:0;font-size:12px;color:#A08898;">© 2026 Mama Salama · رعاية الأمومة بالمغرب</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td></tr>
+              </table>
+            </body>
+            </html>
+            """.formatted(accentColor, titleFr, titleAr, bodyFr, bodyAr);
+    }
+
     private String buildHtml(String code, String purposeFr, String purposeAr, boolean isReset) {
         String accentColor = isReset ? "#C47E2A" : "#C2617A";
         String accentLight = isReset ? "#FDF3E3" : "#FAF0F2";
