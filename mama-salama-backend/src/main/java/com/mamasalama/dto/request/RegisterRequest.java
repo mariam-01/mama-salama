@@ -1,6 +1,7 @@
 package com.mamasalama.dto.request;
 
 import com.mamasalama.enums.OtpChannel;
+import com.mamasalama.enums.Role;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -26,4 +27,8 @@ public class RegisterRequest {
 
     @NotNull(message = "OTP channel is required (SMS or EMAIL)")
     private OtpChannel otpChannel;
+
+    private Role role;
+
+    private String inviteCode;
 }
