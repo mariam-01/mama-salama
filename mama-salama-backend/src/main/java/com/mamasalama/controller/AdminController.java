@@ -4,6 +4,7 @@ import com.mamasalama.dto.request.DoctorCreateRequest;
 import com.mamasalama.dto.request.DoctorInviteRequest;
 import com.mamasalama.dto.request.UpdateUserStatusRequest;
 import com.mamasalama.dto.response.*;
+import com.mamasalama.enums.AlertStatus;
 import com.mamasalama.enums.Language;
 import com.mamasalama.service.AdminService;
 import com.mamasalama.service.KnowledgeBaseService;
@@ -35,6 +36,11 @@ public class AdminController {
     private final AdminService adminService;
     private final KnowledgeBaseService knowledgeBaseService;
 
+    @GetMapping("/stats")
+    @Operation(summary = "Get platform statistics")
+    public ResponseEntity<AdminStatsResponse> getStats() {
+        return ResponseEntity.ok(adminService.getStats());
+    }
 
     // ── Patients ──────────────────────────────────────────────────────────────
 
@@ -78,6 +84,15 @@ public class AdminController {
             @PathVariable UUID doctorId,
             @Valid @RequestBody UpdateUserStatusRequest request) {
         return ResponseEntity.ok(adminService.updateDoctorStatus(doctorId, request));
+    }
+
+    // ── Alerts ────────────────────────────────────────────────────────────────
+
+    @GetMapping("/alerts")
+    @Operation(summary = "List all emergency alerts, optionally filtered by status")
+    public ResponseEntity<List<EmergencyAlertResponse>> getAlerts(
+            @RequestParam(required = false) AlertStatus status) {
+        return ResponseEntity.ok(adminService.getAlerts(status));
     }
 
     // ── Invite Codes ──────────────────────────────────────────────────────────
