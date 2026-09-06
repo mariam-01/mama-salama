@@ -42,6 +42,35 @@ public class EmailService {
         send(patientEmail, "ماما سلامة | Alerte prise en charge", html);
     }
 
+    public void sendAppointmentProposedNotification(String patientEmail, String doctorEmail, String type) {
+        String html = buildInfoHtml(
+                "Nouveau rendez-vous proposé",
+                "تم اقتراح موعد جديد",
+                "Le Dr " + doctorEmail + " vous a proposé un rendez-vous de type " + type + ". Veuillez confirmer l'un des créneaux.",
+                "اقترح الدكتور " + doctorEmail + " موعداً من نوع " + type + ". يرجى تأكيد أحد المواعيد المقترحة.",
+                "#C2617A");
+        send(patientEmail, "ماما سلامة | Rendez-vous proposé", html);
+    }
+
+    public void sendAppointmentConfirmedNotification(String doctorEmail, String patientEmail, String confirmedDate) {
+        String html = buildInfoHtml(
+                "Rendez-vous confirmé",
+                "تم تأكيد الموعد",
+                "La patiente " + patientEmail + " a confirmé le rendez-vous pour le " + confirmedDate + ".",
+                "المريضة " + patientEmail + " أكدت الموعد بتاريخ " + confirmedDate + ".",
+                "#C2617A");
+        send(doctorEmail, "ماما سلامة | Rendez-vous confirmé", html);
+    }
+
+    public void sendAppointmentCancelledNotification(String recipientEmail, String cancelledByEmail) {
+        String html = buildInfoHtml(
+                "Rendez-vous annulé",
+                "تم إلغاء الموعد",
+                "Le rendez-vous a été annulé par " + cancelledByEmail + ".",
+                "تم إلغاء الموعد من قبل " + cancelledByEmail + ".",
+                "#C47E2A");
+        send(recipientEmail, "ماما سلامة | Rendez-vous annulé", html);
+    }
 
     public void sendDoctorInviteEmail(String doctorEmail, String firstName, String inviteLink) {
         String displayName = (firstName != null && !firstName.isBlank()) ? "Dr " + firstName : "Docteur";

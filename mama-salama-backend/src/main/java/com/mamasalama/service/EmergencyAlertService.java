@@ -97,6 +97,35 @@ public class EmergencyAlertService {
         return result.stream().map(alertMapper::toResponse).collect(Collectors.toList());
     }
 
+    @Transactional
+    public EmergencyAlertResponse claimAlert(UUID alertId, String email) {
+        EmergencyAlert alert = alertRepository.findById(alertId)
+                .orElseThrow(() -> new ResourceNotFoundException("Alert not found"));
+        if (alert.getStatus() != AlertStatus.PENDING) {
+            throw new ValidationException("Only PENDING alerts can be claimed");
+        }
+
+        User doctor = userRepository.findByEmail(email)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
+        alert.setStatus(AlertStatus.CLAIMED);
+        alert.setClaimedBy(doctor);
+        alert.setClaimedAt(LocalDateTime.now());
+
+        PatientProfile profile = alert.getPatient();
+        profile.setAssignedDoctor(doctor);
+        profileRepository.save(profile);
+
+        alertRepository.save(alert);
+
+        try {
+            emailService.sendAlertClaimedNotification(profile.getUser().getEmail(), doctor.getEmail());
+        } catch (Exception e) {
+            log.warn("Failed to send alert claimed notification: {}", e.getMessage());
+        }
+
+        return alertMapper.toResponse(alert);
+    }
 
 
 }
