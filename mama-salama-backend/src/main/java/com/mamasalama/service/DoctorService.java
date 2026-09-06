@@ -4,22 +4,28 @@ import com.mamasalama.dto.request.DoctorProfileUpdateRequest;
 
 import com.mamasalama.dto.response.DoctorProfileResponse;
 
+import com.mamasalama.entity.Checkup;
 import com.mamasalama.entity.User;
 import com.mamasalama.exception.ResourceNotFoundException;
 
+import com.mamasalama.repository.CheckupRepository;
+import com.mamasalama.repository.PatientProfileRepository;
 import com.mamasalama.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class DoctorService {
 
     private final UserRepository userRepository;
-
+    private final PatientProfileRepository patientProfileRepository;
+    private final CheckupRepository checkupRepository;
 
     @Transactional(readOnly = true)
     public DoctorProfileResponse getProfile(String doctorEmail) {
@@ -39,6 +45,19 @@ public class DoctorService {
         if (request.getPrefecture() != null) doctor.setPrefecture(request.getPrefecture());
         if (request.getCity() != null) doctor.setCity(request.getCity());
         return DoctorProfileResponse.from(userRepository.save(doctor));
+    }
+
+    @Transactional(readOnly = true)
+    public List<DoctorPatientResponse> getMyPatients(String doctorEmail) {
+        User doctor = userRepository.findByEmail(doctorEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+        return patientProfileRepository.findByAssignedDoctor(doctor).stream()
+                .map(profile -> {
+                    Checkup last = checkupRepository
+                            .findFirstByPatientOrderByCreatedAtDesc(profile.getUser()).orElse(null);
+                    return DoctorPatientResponse.from(profile, last);
+                })
+                .collect(Collectors.toList());
     }
 
 
