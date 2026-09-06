@@ -4,6 +4,7 @@ package com.mamasalama.service;
 import com.mamasalama.dto.request.DoctorCreateRequest;
 import com.mamasalama.dto.request.DoctorInviteRequest;
 
+import com.mamasalama.dto.request.UpdateUserStatusRequest;
 import com.mamasalama.dto.response.InviteCodeResponse;
 import com.mamasalama.entity.InviteCode;
 import com.mamasalama.entity.User;
@@ -78,6 +79,17 @@ public class AdminService {
         return AdminDoctorResponse.from(doctor, patientCount);
     }
 
+    @Transactional
+    public AdminDoctorResponse updateDoctorStatus(UUID doctorId, UpdateUserStatusRequest request) {
+        User user = userRepository.findById(doctorId)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+        if (user.getRole() != Role.DOCTOR) {
+            throw new ValidationException("User is not a doctor");
+        }
+        user.setEnabled(request.getActive());
+        userRepository.save(user);
+        return AdminDoctorResponse.from(user, profileRepository.countByAssignedDoctor(user));
+    }
 
     @Transactional
     public InviteCodeResponse sendInvite(DoctorInviteRequest request, String adminEmail) {
