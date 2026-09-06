@@ -69,6 +69,15 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(response, "Password reset successfully"));
     }
 
+    @PostMapping("/complete-invite")
+    @Operation(summary = "Complete doctor registration using an invite link token")
+    public ResponseEntity<ApiResponse<AuthResponse>> completeInvite(
+            @Valid @RequestBody CompleteInviteRequest request) {
+        AuthResponse response = authService.completeInvite(request);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(response, "Account created successfully"));
+    }
+
     @PostMapping("/resend-otp/{userId}")
     @Operation(summary = "Resend OTP — specify channel: SMS or EMAIL")
     public ResponseEntity<ApiResponse<Void>> resendOtp(
