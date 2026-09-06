@@ -4,12 +4,12 @@ package com.mamasalama.service;
 import com.mamasalama.mapper.EmergencyAlertMapper;
 import com.mamasalama.dto.request.DoctorCreateRequest;
 import com.mamasalama.dto.request.DoctorInviteRequest;
-
 import com.mamasalama.dto.request.UpdateUserStatusRequest;
 import com.mamasalama.dto.response.AdminDoctorResponse;
 import com.mamasalama.dto.response.AdminPatientResponse;
 import com.mamasalama.dto.response.AdminStatsResponse;
 import com.mamasalama.dto.response.InviteCodeResponse;
+import com.mamasalama.entity.EmergencyAlert;
 import com.mamasalama.entity.InviteCode;
 import com.mamasalama.entity.PatientProfile;
 import com.mamasalama.entity.User;
@@ -59,6 +59,7 @@ public class AdminService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final InviteCodeMapper inviteCodeMapper;
+    private final EmergencyAlertMapper alertMapper;
 
     @Transactional(readOnly = true)
     public AdminStatsResponse getStats() {
@@ -69,6 +70,14 @@ public class AdminService {
                 .proposedAppointmentCount(appointmentRepository.countByStatus(AppointmentStatus.PROPOSED))
                 .documentCount(documentRepository.count())
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<EmergencyAlertResponse> getAlerts(AlertStatus status) {
+        List<EmergencyAlert> alerts = status != null
+                ? alertRepository.findByStatusOrderByCreatedAtDesc(status)
+                : alertRepository.findAllByOrderByCreatedAtDesc();
+        return alerts.stream().map(alertMapper::toResponse).collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
