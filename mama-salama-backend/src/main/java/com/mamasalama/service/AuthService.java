@@ -1,5 +1,6 @@
 package com.mamasalama.service;
 
+import com.mamasalama.dto.request.CompleteInviteRequest;
 import com.mamasalama.dto.request.ForgotPasswordRequest;
 import com.mamasalama.dto.request.LoginRequest;
 import com.mamasalama.dto.request.OtpVerifyRequest;
@@ -7,13 +8,16 @@ import com.mamasalama.dto.request.RegisterRequest;
 import com.mamasalama.dto.request.ResetPasswordRequest;
 import com.mamasalama.dto.response.AuthResponse;
 import com.mamasalama.dto.response.RegisterResponse;
+import com.mamasalama.entity.InviteCode;
 import com.mamasalama.entity.OtpToken;
 import com.mamasalama.entity.User;
+import com.mamasalama.enums.InviteCodeStatus;
 import com.mamasalama.enums.OtpChannel;
 import com.mamasalama.enums.Role;
 import com.mamasalama.exception.AuthException;
 import com.mamasalama.exception.ResourceNotFoundException;
 import com.mamasalama.exception.ValidationException;
+import com.mamasalama.repository.InviteCodeRepository;
 import com.mamasalama.repository.OtpTokenRepository;
 import com.mamasalama.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +37,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final OtpTokenRepository otpTokenRepository;
+    private final InviteCodeRepository inviteCodeRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final SmsService smsService;
@@ -148,6 +153,47 @@ public class AuthService {
 
         log.info("Password reset successfully for user {}", user.getEmail());
         return buildAuthResponse(user);
+    }
+
+    @Transactional
+    public AuthResponse completeInvite(CompleteInviteRequest request) {
+        InviteCode invite = inviteCodeRepository
+                .findByTokenAndStatusAndExpiresAtAfter(request.getToken(), InviteCodeStatus.PENDING, LocalDateTime.now())
+                .orElseThrow(() -> new ValidationException("Invite link is invalid or has expired"));
+
+        if (userRepository.existsByEmail(invite.getEmail())) {
+            throw new AuthException("An account with this email already exists");
+        }
+
+        String fullName = null;
+        if (invite.getFirstName() != null || invite.getLastName() != null) {
+            fullName = ((invite.getFirstName() != null ? invite.getFirstName() : "") + " "
+                    + (invite.getLastName() != null ? invite.getLastName() : "")).trim();
+        }
+
+        User doctor = User.builder()
+                .email(invite.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .phone(request.getPhone())
+                .fullName(fullName)
+                .city(invite.getCity())
+                .prefecture(invite.getPrefecture())
+                .region(invite.getRegion())
+                .hospital(invite.getHospital())
+                .specialty(invite.getSpecialty())
+                .role(Role.DOCTOR)
+                .enabled(true)
+                .build();
+
+        doctor = userRepository.save(doctor);
+
+        invite.setStatus(InviteCodeStatus.ACCEPTED);
+        invite.setUsedBy(doctor);
+        invite.setUsedAt(LocalDateTime.now());
+        inviteCodeRepository.save(invite);
+
+        log.info("Doctor account created via invite for {}", invite.getEmail());
+        return buildAuthResponse(doctor);
     }
 
     @Transactional
