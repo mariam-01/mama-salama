@@ -55,8 +55,9 @@ public class PatientProfileService {
         profile.setAge(request.getAge());
         profile.setLanguage(request.getLanguage());
         profile.setRegion(request.getRegion());
+        profile.setMilieu(request.getMilieu());
         profile.setCity(request.getCity());
-        profile.setProvince(request.getProvince());
+        profile.setPrefecture(request.getPrefecture());
         profile.setBloodType(request.getBloodType());
         profile.setWeight(request.getWeight());
         profile.setHeight(request.getHeight());

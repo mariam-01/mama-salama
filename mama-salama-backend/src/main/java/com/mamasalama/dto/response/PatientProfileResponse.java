@@ -25,8 +25,9 @@ public class PatientProfileResponse {
     private Integer age;
     private Language language;
     private String region;
+    private String milieu;
     private String city;
-    private String province;
+    private String prefecture;
     private Integer pregnancyWeek;
     private Integer pregnancyWeekCalculated;
     private LocalDate lastMenstrualPeriod;
@@ -52,8 +53,9 @@ public class PatientProfileResponse {
                 .age(profile.getAge())
                 .language(profile.getLanguage())
                 .region(profile.getRegion())
+                .milieu(profile.getMilieu())
                 .city(profile.getCity())
-                .province(profile.getProvince())
+                .prefecture(profile.getPrefecture())
                 .pregnancyWeek(profile.getPregnancyWeek())
                 .pregnancyWeekCalculated(profile.getPregnancyWeekCalculated())
                 .lastMenstrualPeriod(profile.getLastMenstrualPeriod())

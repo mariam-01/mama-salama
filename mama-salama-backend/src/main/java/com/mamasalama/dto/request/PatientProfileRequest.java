@@ -29,9 +29,11 @@ public class PatientProfileRequest {
 
     private String region;
 
+    private String milieu;
+
     private String city;
 
-    private String province;
+    private String prefecture;
 
     @Min(value = 1, message = "Pregnancy week must be at least 1")
     @Max(value = 42, message = "Pregnancy week must not exceed 42")

@@ -19,7 +19,7 @@ public class InviteCodeResponse {
     private String firstName;
     private String lastName;
     private String city;
-    private String province;
+    private String prefecture;
     private String hospital;
     private InviteCodeStatus status;
     private String createdByEmail;

@@ -31,9 +31,13 @@ public class InviteCode extends AbstractEntity {
 
     private String city;
 
-    private String province;
+    private String prefecture;
+
+    private String region;
 
     private String hospital;
+
+    private String specialty;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
