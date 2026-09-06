@@ -10,19 +10,23 @@ import com.mamasalama.dto.response.AdminPatientResponse;
 import com.mamasalama.dto.response.AdminStatsResponse;
 import com.mamasalama.dto.response.InviteCodeResponse;
 import com.mamasalama.entity.InviteCode;
+import com.mamasalama.entity.PatientProfile;
 import com.mamasalama.entity.User;
 
 import com.mamasalama.enums.InviteCodeStatus;
-
+import com.mamasalama.enums.Role;
+import com.mamasalama.exception.AuthException;
 import com.mamasalama.exception.ResourceNotFoundException;
 import com.mamasalama.exception.ValidationException;
 import com.mamasalama.mapper.InviteCodeMapper;
 
 import com.mamasalama.repository.InviteCodeRepository;
 
+import com.mamasalama.repository.PatientProfileRepository;
 import com.mamasalama.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -32,7 +36,8 @@ import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.List;
-
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -43,10 +48,25 @@ public class AdminService {
     private String frontendUrl;
 
     private final UserRepository userRepository;
+    private final PatientProfileRepository profileRepository;
+
     private final InviteCodeRepository inviteCodeRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final InviteCodeMapper inviteCodeMapper;
+
+    @Transactional(readOnly = true)
+    public List<AdminPatientResponse> getPatients(String search) {
+        List<User> users = (search != null && !search.isBlank())
+                ? userRepository.findByRoleAndSearch(Role.PATIENT, search)
+                : userRepository.findByRole(Role.PATIENT);
+        return users.stream()
+                .map(user -> {
+                    PatientProfile profile = profileRepository.findByUser(user).orElse(null);
+                    return AdminPatientResponse.from(user, profile);
+                })
+                .collect(Collectors.toList());
+    }
 
     @Transactional
     public AdminPatientResponse updatePatientStatus(UUID patientId, UpdateUserStatusRequest request) {
