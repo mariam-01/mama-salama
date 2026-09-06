@@ -11,6 +11,7 @@ import com.mamasalama.entity.User;
 import com.mamasalama.enums.AppointmentStatus;
 import com.mamasalama.mapper.AppointmentMapper;
 import com.mamasalama.repository.AppointmentRepository;
+import com.mamasalama.repository.AppointmentSlotRepository;
 import com.mamasalama.repository.EmergencyAlertRepository;
 import com.mamasalama.repository.PatientProfileRepository;
 import com.mamasalama.repository.UserRepository;
@@ -31,6 +32,7 @@ import java.util.stream.Collectors;
 public class AppointmentService {
 
     private final AppointmentRepository appointmentRepository;
+    private final AppointmentSlotRepository slotRepository;
     private final PatientProfileRepository profileRepository;
     private final UserRepository userRepository;
     private final EmergencyAlertRepository alertRepository;
@@ -171,4 +173,31 @@ public class AppointmentService {
         return appointmentMapper.toResponse(appointmentRepository.save(appointment));
     }
 
+    @Transactional
+    public AppointmentResponse cancelAppointment(UUID appointmentId, String requesterEmail) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
+
+        boolean isPatient = appointment.getPatient().getUser().getEmail().equals(requesterEmail);
+        boolean isDoctor = appointment.getDoctor().getEmail().equals(requesterEmail);
+
+        if (!isPatient && !isDoctor) {
+            throw new ValidationException("You are not authorized to cancel this appointment");
+        }
+        if (appointment.getStatus() == AppointmentStatus.COMPLETED || appointment.getStatus() == AppointmentStatus.CANCELLED) {
+            throw new ValidationException("Cannot cancel an appointment that is already " + appointment.getStatus());
+        }
+
+        appointment.setStatus(AppointmentStatus.CANCELLED);
+        Appointment saved = appointmentRepository.save(appointment);
+
+        try {
+            String notifyEmail = isPatient ? appointment.getDoctor().getEmail() : appointment.getPatient().getUser().getEmail();
+            emailService.sendAppointmentCancelledNotification(notifyEmail, requesterEmail);
+        } catch (Exception e) {
+            log.warn("Failed to send appointment cancelled notification: {}", e.getMessage());
+        }
+
+        return appointmentMapper.toResponse(saved);
+    }
 }
