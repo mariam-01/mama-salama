@@ -5,6 +5,9 @@ import com.mamasalama.dto.request.DoctorCreateRequest;
 import com.mamasalama.dto.request.DoctorInviteRequest;
 
 import com.mamasalama.dto.request.UpdateUserStatusRequest;
+import com.mamasalama.dto.response.AdminDoctorResponse;
+import com.mamasalama.dto.response.AdminPatientResponse;
+import com.mamasalama.dto.response.AdminStatsResponse;
 import com.mamasalama.dto.response.InviteCodeResponse;
 import com.mamasalama.entity.InviteCode;
 import com.mamasalama.entity.User;
@@ -44,6 +47,16 @@ public class AdminService {
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final InviteCodeMapper inviteCodeMapper;
+
+    @Transactional(readOnly = true)
+    public List<AdminDoctorResponse> getDoctors(String search) {
+        List<User> doctors = (search != null && !search.isBlank())
+                ? userRepository.findByRoleAndSearch(Role.DOCTOR, search)
+                : userRepository.findByRole(Role.DOCTOR);
+        return doctors.stream()
+                .map(doctor -> AdminDoctorResponse.from(doctor, profileRepository.countByAssignedDoctor(doctor)))
+                .collect(Collectors.toList());
+    }
 
     @Transactional
     public AdminDoctorResponse createDoctor(DoctorCreateRequest request, String adminEmail) {
