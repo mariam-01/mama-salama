@@ -3,11 +3,13 @@ package com.mamasalama.service;
 import com.mamasalama.dto.request.DoctorProfileUpdateRequest;
 
 import com.mamasalama.dto.response.DoctorProfileResponse;
-
+import com.mamasalama.dto.response.PatientDetailResponse;
+import com.mamasalama.dto.response.PatientProfileResponse;
 import com.mamasalama.entity.Checkup;
+import com.mamasalama.entity.PatientProfile;
 import com.mamasalama.entity.User;
 import com.mamasalama.exception.ResourceNotFoundException;
-
+import com.mamasalama.exception.ValidationException;
 import com.mamasalama.repository.CheckupRepository;
 import com.mamasalama.repository.PatientProfileRepository;
 import com.mamasalama.repository.UserRepository;
@@ -15,8 +17,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -60,6 +62,24 @@ public class DoctorService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional(readOnly = true)
+    public List<DoctorPatientResponse> searchMyPatients(String doctorEmail, String query) {
+        User doctor = userRepository.findByEmail(doctorEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+        String lq = query == null ? "" : query.toLowerCase();
+        return patientProfileRepository.findByAssignedDoctor(doctor).stream()
+                .filter(p -> {
+                    String name = p.getFullName() != null ? p.getFullName().toLowerCase() : "";
+                    String email = p.getUser().getEmail().toLowerCase();
+                    return name.contains(lq) || email.contains(lq);
+                })
+                .map(profile -> {
+                    Checkup last = checkupRepository
+                            .findFirstByPatientOrderByCreatedAtDesc(profile.getUser()).orElse(null);
+                    return DoctorPatientResponse.from(profile, last);
+                })
+                .collect(Collectors.toList());
+    }
 
 
 }
