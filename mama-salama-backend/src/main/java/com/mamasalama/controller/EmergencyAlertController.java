@@ -16,6 +16,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/emergency")
@@ -44,4 +45,30 @@ public class EmergencyAlertController {
         return ResponseEntity.ok(alertService.getPendingForDoctor(user.getUsername()));
     }
 
+    @PutMapping("/{alertId}/claim")
+    @PreAuthorize("hasRole('DOCTOR')")
+    @Operation(summary = "Claim a pending alert")
+    public ResponseEntity<EmergencyAlertResponse> claimAlert(
+            @PathVariable UUID alertId,
+            @AuthenticationPrincipal UserDetails user) {
+        return ResponseEntity.ok(alertService.claimAlert(alertId, user.getUsername()));
+    }
+
+    @PutMapping("/{alertId}/cancel")
+    @PreAuthorize("hasRole('PATIENT')")
+    @Operation(summary = "Cancel a pending alert")
+    public ResponseEntity<EmergencyAlertResponse> cancelAlert(
+            @PathVariable UUID alertId,
+            @AuthenticationPrincipal UserDetails user) {
+        return ResponseEntity.ok(alertService.cancelAlert(alertId, user.getUsername()));
+    }
+
+    @PutMapping("/{alertId}/resolve")
+    @PreAuthorize("hasRole('DOCTOR')")
+    @Operation(summary = "Resolve a claimed alert")
+    public ResponseEntity<EmergencyAlertResponse> resolveAlert(
+            @PathVariable UUID alertId,
+            @AuthenticationPrincipal UserDetails user) {
+        return ResponseEntity.ok(alertService.resolveAlert(alertId, user.getUsername()));
+    }
 }
