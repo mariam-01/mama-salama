@@ -1,5 +1,6 @@
 package com.mamasalama.controller;
 
+import com.mamasalama.dto.request.CompleteInviteRequest;
 import com.mamasalama.dto.request.ForgotPasswordRequest;
 import com.mamasalama.dto.request.LoginRequest;
 import com.mamasalama.dto.request.OtpVerifyRequest;
