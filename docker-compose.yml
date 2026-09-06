@@ -60,6 +60,8 @@ services:
         condition: service_healthy
       eureka:
         condition: service_healthy
+      minio:
+        condition: service_healthy
     networks:
       - mama-net
 
@@ -115,6 +117,7 @@ services:
 volumes:
   postgres_data:
   chroma_data:
+  minio_data:
 
 networks:
   mama-net:
