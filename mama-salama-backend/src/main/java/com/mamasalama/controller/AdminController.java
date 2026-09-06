@@ -36,6 +36,26 @@ public class AdminController {
     private final KnowledgeBaseService knowledgeBaseService;
 
 
+
+
+
+    // ── Invite Codes ──────────────────────────────────────────────────────────
+
+    @PostMapping("/invite-codes")
+    @Operation(summary = "Send a doctor invite email with a registration link")
+    public ResponseEntity<InviteCodeResponse> sendInvite(
+            @Valid @RequestBody DoctorInviteRequest request,
+            @AuthenticationPrincipal UserDetails user) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(adminService.sendInvite(request, user.getUsername()));
+    }
+
+    @GetMapping("/invite-codes")
+    @Operation(summary = "List all invite codes")
+    public ResponseEntity<List<InviteCodeResponse>> listInviteCodes() {
+        return ResponseEntity.ok(adminService.listInviteCodes());
+    }
+
     // ── Knowledge Base ────────────────────────────────────────────────────────
 
     @PostMapping(value = "/knowledge-base", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
