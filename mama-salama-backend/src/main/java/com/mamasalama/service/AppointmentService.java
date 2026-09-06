@@ -80,6 +80,26 @@ public class AppointmentService {
         return appointmentMapper.toResponse(saved);
     }
 
+    @Transactional(readOnly = true)
+    public List<AppointmentResponse> getDoctorAppointments(String doctorEmail) {
+        User doctor = userRepository.findByEmail(doctorEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+        return appointmentRepository.findByDoctor(doctor).stream()
+                .map(appointmentMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Transactional(readOnly = true)
+    public List<AppointmentResponse> getPatientAppointments(String patientEmail) {
+        User user = userRepository.findByEmail(patientEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+        PatientProfile profile = profileRepository.findByUser(user)
+                .orElseThrow(() -> new ResourceNotFoundException("Patient profile not found"));
+        return appointmentRepository.findByPatient(profile).stream()
+                .map(appointmentMapper::toResponse)
+                .collect(Collectors.toList());
+    }
+
 
 
 
