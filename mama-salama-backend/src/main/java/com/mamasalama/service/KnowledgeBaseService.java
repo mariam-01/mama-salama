@@ -68,15 +68,16 @@ public class KnowledgeBaseService {
             });
             body.add("language", language.name().toLowerCase());
             body.add("document_id", docId.toString());
+            log.info("Forwarding document {} to AI service for indexing", docId);
 
             Map<?, ?> response = aiRestClient.post()
-                    .uri("/api/knowledge-base/upload")
+                    .uri("/api/ingest/pdf")
                     .contentType(MediaType.MULTIPART_FORM_DATA)
                     .body(body)
                     .retrieve()
                     .body(Map.class);
-
-            Integer chunkCount = response != null ? (Integer) response.get("chunk_count") : null;
+            log.info("AI service response for document {}: {}", docId, response);
+            Integer chunkCount = response != null ? (Integer) response.get("indexed") : null;
             document = documentRepository.findById(docId)
                     .orElseThrow(() -> new ResourceNotFoundException("Document not found after save"));
             document.setStatus(DocumentStatus.DONE);
