@@ -142,4 +142,20 @@ public class EmergencyAlertService {
         alert.setStatus(AlertStatus.CANCELLED);
         return alertMapper.toResponse(alertRepository.save(alert));
     }
+
+    @Transactional
+    public EmergencyAlertResponse resolveAlert(UUID alertId, String email) {
+        EmergencyAlert alert = alertRepository.findById(alertId)
+                .orElseThrow(() -> new ResourceNotFoundException("Alert not found"));
+
+        if (alert.getClaimedBy() == null || !alert.getClaimedBy().getEmail().equals(email)) {
+            throw new ValidationException("Only the doctor who claimed this alert can resolve it");
+        }
+        if (alert.getStatus() != AlertStatus.CLAIMED) {
+            throw new ValidationException("Only CLAIMED alerts can be resolved");
+        }
+
+        alert.setStatus(AlertStatus.RESOLVED);
+        return alertMapper.toResponse(alertRepository.save(alert));
+    }
 }
