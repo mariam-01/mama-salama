@@ -42,6 +42,8 @@ class ChatResponse(BaseModel):
     answer: str
     source: str
     rag_available: bool
+    emergency_detected: bool = False
+    trigger_message: Optional[str] = None
 
 
 class IngestRequest(BaseModel):
@@ -58,6 +60,8 @@ class VoiceChatResponse(BaseModel):
     answer: str
     source: str
     rag_available: bool
+    emergency_detected: bool = False
+    trigger_message: Optional[str] = None
 
 
 @router.post("/chat", response_model=ChatResponse)
@@ -66,16 +70,18 @@ async def chat(request: ChatRequest, req: Request):
     rag = req.app.state.rag
     settings = req.app.state.settings
 
-    answer = await chain.invoke(
+    result = await chain.invoke(
         question=request.question,
         language=request.language,
         patient_context=request.patient_context.model_dump() if request.patient_context else None,
         alert_context=request.alert_context.model_dump() if request.alert_context else None,
     )
     return ChatResponse(
-        answer=answer,
+        answer=result.answer,
         source=f"OpenAI {settings.openai_model} + ChromaDB RAG",
         rag_available=rag.ready,
+        emergency_detected=result.emergency_detected,
+        trigger_message=result.trigger_message,
     )
 
 
@@ -142,7 +148,7 @@ async def voice_chat(
     p_ctx = json.loads(patient_context) if patient_context else None
     a_ctx = json.loads(alert_context) if alert_context else None
 
-    answer = await chain.invoke(
+    result = await chain.invoke(
         question=transcription,
         language=language,
         patient_context=p_ctx,
@@ -151,9 +157,11 @@ async def voice_chat(
 
     return VoiceChatResponse(
         transcription=transcription,
-        answer=answer,
+        answer=result.answer,
         source=f"Whisper-1 + {settings.openai_model} + ChromaDB RAG",
         rag_available=rag.ready,
+        emergency_detected=result.emergency_detected,
+        trigger_message=result.trigger_message,
     )
 
 
