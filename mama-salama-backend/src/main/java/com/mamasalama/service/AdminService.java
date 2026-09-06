@@ -48,6 +48,20 @@ public class AdminService {
     private final EmailService emailService;
     private final InviteCodeMapper inviteCodeMapper;
 
+    @Transactional
+    public AdminPatientResponse updatePatientStatus(UUID patientId, UpdateUserStatusRequest request) {
+        User user = userRepository.findById(patientId)
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
+        if (user.getRole() != Role.PATIENT) {
+            throw new ValidationException("User is not a patient");
+        }
+        user.setEnabled(request.getActive());
+        userRepository.save(user);
+        PatientProfile profile = profileRepository.findByUser(user).orElse(null);
+        return AdminPatientResponse.from(user, profile);
+    }
+
+
     @Transactional(readOnly = true)
     public List<AdminDoctorResponse> getDoctors(String search) {
         List<User> doctors = (search != null && !search.isBlank())
