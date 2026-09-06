@@ -139,6 +139,21 @@ public class AppointmentService {
         return appointmentMapper.toResponse(saved);
     }
 
+    @Transactional
+    public AppointmentResponse rejectAppointment(UUID appointmentId, String patientEmail) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
+
+        if (!appointment.getPatient().getUser().getEmail().equals(patientEmail)) {
+            throw new ValidationException("You are not authorized to reject this appointment");
+        }
+        if (appointment.getStatus() != AppointmentStatus.PROPOSED) {
+            throw new ValidationException("Only PROPOSED appointments can be rejected");
+        }
+
+        appointment.setStatus(AppointmentStatus.REJECTED);
+        return appointmentMapper.toResponse(appointmentRepository.save(appointment));
+    }
 
 
 }
