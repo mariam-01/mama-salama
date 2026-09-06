@@ -1,6 +1,7 @@
 package com.mamasalama.service;
 
 
+import com.mamasalama.dto.request.DoctorCreateRequest;
 import com.mamasalama.dto.request.DoctorInviteRequest;
 
 import com.mamasalama.dto.response.InviteCodeResponse;
@@ -39,8 +40,44 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final InviteCodeRepository inviteCodeRepository;
+    private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final InviteCodeMapper inviteCodeMapper;
+
+    @Transactional
+    public AdminDoctorResponse createDoctor(DoctorCreateRequest request, String adminEmail) {
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new AuthException("Email already registered");
+        }
+        User admin = userRepository.findByEmail(adminEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Admin not found"));
+
+        String tempPassword = generateTempPassword();
+
+        User doctor = User.builder()
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(tempPassword))
+                .phone(request.getPhone())
+                .city(request.getCity())
+                .prefecture(request.getPrefecture())
+                .region(request.getRegion())
+                .specialty(request.getSpecialty())
+                .role(Role.DOCTOR)
+                .enabled(true)
+                .build();
+
+        doctor = userRepository.save(doctor);
+
+        try {
+            emailService.sendDoctorTempPasswordEmail(doctor.getEmail(), request.getFullName(), tempPassword);
+        } catch (Exception e) {
+            log.warn("Failed to send doctor temp password email: {}", e.getMessage());
+        }
+
+        long patientCount = profileRepository.countByAssignedDoctor(doctor);
+        return AdminDoctorResponse.from(doctor, patientCount);
+    }
+
 
     @Transactional
     public InviteCodeResponse sendInvite(DoctorInviteRequest request, String adminEmail) {
@@ -87,6 +124,12 @@ public class AdminService {
     @Transactional(readOnly = true)
     public List<InviteCodeResponse> listInviteCodes() {
         return inviteCodeMapper.toResponseList(inviteCodeRepository.findAll());
+    }
+
+    private String generateTempPassword() {
+        byte[] bytes = new byte[12];
+        new SecureRandom().nextBytes(bytes);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
     }
 
     private String generateSecureToken() {
