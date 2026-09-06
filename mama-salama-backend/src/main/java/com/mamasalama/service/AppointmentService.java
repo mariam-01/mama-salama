@@ -1,12 +1,14 @@
 package com.mamasalama.service;
 
 import com.mamasalama.dto.request.AppointmentRequest;
+import com.mamasalama.dto.request.ConfirmSlotRequest;
 import com.mamasalama.dto.response.AppointmentResponse;
 import com.mamasalama.entity.Appointment;
 import com.mamasalama.entity.AppointmentSlot;
 import com.mamasalama.entity.EmergencyAlert;
 import com.mamasalama.entity.PatientProfile;
 import com.mamasalama.entity.User;
+import com.mamasalama.enums.AppointmentStatus;
 import com.mamasalama.mapper.AppointmentMapper;
 import com.mamasalama.repository.AppointmentRepository;
 import com.mamasalama.repository.EmergencyAlertRepository;
@@ -20,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -100,6 +103,41 @@ public class AppointmentService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
+    public AppointmentResponse confirmAppointment(UUID appointmentId, ConfirmSlotRequest request, String patientEmail) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
+
+        if (!appointment.getPatient().getUser().getEmail().equals(patientEmail)) {
+            throw new ValidationException("You are not authorized to confirm this appointment");
+        }
+        if (appointment.getStatus() != AppointmentStatus.PROPOSED) {
+            throw new ValidationException("Only PROPOSED appointments can be confirmed");
+        }
+
+        AppointmentSlot chosen = appointment.getSlots().stream()
+                .filter(s -> s.getId().equals(request.getSlotId()))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("Slot not found in this appointment"));
+
+        appointment.getSlots().forEach(s -> s.setSelected(false));
+        chosen.setSelected(true);
+        appointment.setConfirmedSlot(chosen);
+        appointment.setStatus(AppointmentStatus.CONFIRMED);
+
+        Appointment saved = appointmentRepository.save(appointment);
+
+        try {
+            emailService.sendAppointmentConfirmedNotification(
+                    appointment.getDoctor().getEmail(),
+                    appointment.getPatient().getUser().getEmail(),
+                    chosen.getDateTime().toString());
+        } catch (Exception e) {
+            log.warn("Failed to send appointment confirmed notification: {}", e.getMessage());
+        }
+
+        return appointmentMapper.toResponse(saved);
+    }
 
 
 
