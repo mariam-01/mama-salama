@@ -155,5 +155,20 @@ public class AppointmentService {
         return appointmentMapper.toResponse(appointmentRepository.save(appointment));
     }
 
+    @Transactional
+    public AppointmentResponse completeAppointment(UUID appointmentId, String doctorEmail) {
+        Appointment appointment = appointmentRepository.findById(appointmentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Appointment not found"));
+
+        if (!appointment.getDoctor().getEmail().equals(doctorEmail)) {
+            throw new ValidationException("Only the assigned doctor can complete this appointment");
+        }
+        if (appointment.getStatus() != AppointmentStatus.CONFIRMED) {
+            throw new ValidationException("Only CONFIRMED appointments can be completed");
+        }
+
+        appointment.setStatus(AppointmentStatus.COMPLETED);
+        return appointmentMapper.toResponse(appointmentRepository.save(appointment));
+    }
 
 }
