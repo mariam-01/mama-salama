@@ -69,19 +69,21 @@ public class PatientProfileService {
         profile.setMedicalHistory(request.getMedicalHistory());
         profile.setAllergies(request.getAllergies());
 
-        // User-editable week — saved as-is, due date derived from it
-        profile.setPregnancyWeek(request.getPregnancyWeek());
-        if (request.getPregnancyWeek() != null) {
-            int weeksRemaining = 40 - request.getPregnancyWeek();
-            profile.setDueDateFromWeek(LocalDate.now().plusWeeks(weeksRemaining));
-        }
-
-        // LMP → auto-calculate read-only fields (does not overwrite pregnancyWeek)
+        // LMP takes priority: auto-calculate pregnancyWeek and dueDate from it
         if (request.getLastMenstrualPeriod() != null) {
             LocalDate lmp = request.getLastMenstrualPeriod();
             profile.setLastMenstrualPeriod(lmp);
-            profile.setPregnancyWeekCalculated((int) ChronoUnit.WEEKS.between(lmp, LocalDate.now()));
+            int weeksSinceLmp = (int) ChronoUnit.WEEKS.between(lmp, LocalDate.now());
+            profile.setPregnancyWeek(weeksSinceLmp);
+            profile.setPregnancyWeekCalculated(weeksSinceLmp);
             profile.setDueDate(lmp.plusDays(280)); // Naegele's rule
+            profile.setDueDateFromWeek(null);
+        } else if (request.getPregnancyWeek() != null) {
+            // Manual week fallback when no LMP is provided
+            profile.setPregnancyWeek(request.getPregnancyWeek());
+            profile.setPregnancyWeekCalculated(null);
+            profile.setDueDate(null);
+            profile.setDueDateFromWeek(LocalDate.now().plusWeeks(40 - request.getPregnancyWeek()));
         }
     }
 

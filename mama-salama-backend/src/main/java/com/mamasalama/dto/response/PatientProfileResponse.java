@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Set;
 import java.util.UUID;
 
@@ -47,6 +48,11 @@ public class PatientProfileResponse {
     private LocalDateTime updatedAt;
 
     public static PatientProfileResponse from(PatientProfile profile) {
+        // Always recompute from LMP so the week advances automatically over time
+        Integer currentWeek = profile.getLastMenstrualPeriod() != null
+                ? (int) ChronoUnit.WEEKS.between(profile.getLastMenstrualPeriod(), LocalDate.now())
+                : profile.getPregnancyWeek();
+
         return PatientProfileResponse.builder()
                 .id(profile.getId())
                 .fullName(profile.getFullName())
@@ -56,7 +62,7 @@ public class PatientProfileResponse {
                 .milieu(profile.getMilieu())
                 .city(profile.getCity())
                 .prefecture(profile.getPrefecture())
-                .pregnancyWeek(profile.getPregnancyWeek())
+                .pregnancyWeek(currentWeek)
                 .pregnancyWeekCalculated(profile.getPregnancyWeekCalculated())
                 .lastMenstrualPeriod(profile.getLastMenstrualPeriod())
                 .dueDate(profile.getDueDate())
