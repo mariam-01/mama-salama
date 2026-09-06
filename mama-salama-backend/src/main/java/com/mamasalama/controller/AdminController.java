@@ -36,7 +36,22 @@ public class AdminController {
     private final KnowledgeBaseService knowledgeBaseService;
 
 
+    // ── Patients ──────────────────────────────────────────────────────────────
 
+    @GetMapping("/patients")
+    @Operation(summary = "List patients, optionally filtered by name or email")
+    public ResponseEntity<List<AdminPatientResponse>> getPatients(
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(adminService.getPatients(search));
+    }
+
+    @PutMapping("/patients/{patientId}/status")
+    @Operation(summary = "Enable or disable a patient account")
+    public ResponseEntity<AdminPatientResponse> updatePatientStatus(
+            @PathVariable UUID patientId,
+            @Valid @RequestBody UpdateUserStatusRequest request) {
+        return ResponseEntity.ok(adminService.updatePatientStatus(patientId, request));
+    }
 
 
     // ── Doctors ───────────────────────────────────────────────────────────────
