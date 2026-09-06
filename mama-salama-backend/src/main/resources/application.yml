@@ -60,6 +60,7 @@ eureka:
     prefer-ip-address: true
 
 application:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
   admin:
     email: ${ADMIN_EMAIL}
     password: ${ADMIN_PASSWORD}
