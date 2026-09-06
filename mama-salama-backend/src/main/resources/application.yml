@@ -54,6 +54,9 @@ eureka:
     prefer-ip-address: true
 
 application:
+  admin:
+    email: ${ADMIN_EMAIL}
+    password: ${ADMIN_PASSWORD}
   cors:
     allowed-origins:
       - http://localhost:5173
