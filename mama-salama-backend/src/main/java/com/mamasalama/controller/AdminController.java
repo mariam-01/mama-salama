@@ -39,6 +39,32 @@ public class AdminController {
 
 
 
+    // ── Doctors ───────────────────────────────────────────────────────────────
+
+    @GetMapping("/doctors")
+    @Operation(summary = "List doctors, optionally filtered by name or email")
+    public ResponseEntity<List<AdminDoctorResponse>> getDoctors(
+            @RequestParam(required = false) String search) {
+        return ResponseEntity.ok(adminService.getDoctors(search));
+    }
+
+    @PostMapping("/doctors")
+    @Operation(summary = "Create a doctor account directly (bypasses invite code)")
+    public ResponseEntity<AdminDoctorResponse> createDoctor(
+            @Valid @RequestBody DoctorCreateRequest request,
+            @AuthenticationPrincipal UserDetails user) {
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(adminService.createDoctor(request, user.getUsername()));
+    }
+
+    @PutMapping("/doctors/{doctorId}/status")
+    @Operation(summary = "Enable or disable a doctor account")
+    public ResponseEntity<AdminDoctorResponse> updateDoctorStatus(
+            @PathVariable UUID doctorId,
+            @Valid @RequestBody UpdateUserStatusRequest request) {
+        return ResponseEntity.ok(adminService.updateDoctorStatus(doctorId, request));
+    }
+
     // ── Invite Codes ──────────────────────────────────────────────────────────
 
     @PostMapping("/invite-codes")
