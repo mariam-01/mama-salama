@@ -86,6 +86,11 @@ public class PatientProfile extends AbstractEntity {
     @Column(columnDefinition = "TEXT")
     private String allergies;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_doctor_id")
+    @ToString.Exclude
+    private User assignedDoctor;
+
     @CreatedDate
     @Column(updatable = false)
     private LocalDateTime createdAt;
