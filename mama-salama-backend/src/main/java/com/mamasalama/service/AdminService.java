@@ -1,6 +1,7 @@
 package com.mamasalama.service;
 
 
+import com.mamasalama.mapper.EmergencyAlertMapper;
 import com.mamasalama.dto.request.DoctorCreateRequest;
 import com.mamasalama.dto.request.DoctorInviteRequest;
 
@@ -12,16 +13,18 @@ import com.mamasalama.dto.response.InviteCodeResponse;
 import com.mamasalama.entity.InviteCode;
 import com.mamasalama.entity.PatientProfile;
 import com.mamasalama.entity.User;
-
+import com.mamasalama.enums.AlertStatus;
+import com.mamasalama.enums.AppointmentStatus;
 import com.mamasalama.enums.InviteCodeStatus;
 import com.mamasalama.enums.Role;
 import com.mamasalama.exception.AuthException;
 import com.mamasalama.exception.ResourceNotFoundException;
 import com.mamasalama.exception.ValidationException;
 import com.mamasalama.mapper.InviteCodeMapper;
-
+import com.mamasalama.repository.AppointmentRepository;
+import com.mamasalama.repository.EmergencyAlertRepository;
 import com.mamasalama.repository.InviteCodeRepository;
-
+import com.mamasalama.repository.KnowledgeBaseDocumentRepository;
 import com.mamasalama.repository.PatientProfileRepository;
 import com.mamasalama.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -49,11 +52,24 @@ public class AdminService {
 
     private final UserRepository userRepository;
     private final PatientProfileRepository profileRepository;
-
+    private final EmergencyAlertRepository alertRepository;
+    private final AppointmentRepository appointmentRepository;
+    private final KnowledgeBaseDocumentRepository documentRepository;
     private final InviteCodeRepository inviteCodeRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final InviteCodeMapper inviteCodeMapper;
+
+    @Transactional(readOnly = true)
+    public AdminStatsResponse getStats() {
+        return AdminStatsResponse.builder()
+                .patientCount(userRepository.countByRole(Role.PATIENT))
+                .doctorCount(userRepository.countByRole(Role.DOCTOR))
+                .pendingAlertCount(alertRepository.countByStatus(AlertStatus.PENDING))
+                .proposedAppointmentCount(appointmentRepository.countByStatus(AppointmentStatus.PROPOSED))
+                .documentCount(documentRepository.count())
+                .build();
+    }
 
     @Transactional(readOnly = true)
     public List<AdminPatientResponse> getPatients(String search) {
