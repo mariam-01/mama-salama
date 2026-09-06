@@ -33,6 +33,15 @@ public class EmailService {
     }
 
     public void sendAlertClaimedNotification(String patientEmail, String doctorEmail) {
+        String html = buildInfoHtml(
+                "Votre alerte a été prise en charge",
+                "تم الرد على تنبيهك",
+                "Un médecin (" + doctorEmail + ") a accepté votre alerte d'urgence et vous sera attribué.",
+                "الطبيب " + doctorEmail + " قبل تنبيه الطوارئ الخاص بك وسيتم تكليفه بك.",
+                "#C2617A");
+        send(patientEmail, "ماما سلامة | Alerte prise en charge", html);
+    }
+
 
     public void sendDoctorInviteEmail(String doctorEmail, String firstName, String inviteLink) {
         String displayName = (firstName != null && !firstName.isBlank()) ? "Dr " + firstName : "Docteur";
