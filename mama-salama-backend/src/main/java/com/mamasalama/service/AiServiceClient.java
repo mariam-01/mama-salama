@@ -56,7 +56,9 @@ public interface AiServiceClient {
     record ChatResponse(
             String answer,
             String source,
-            @JsonProperty("rag_available") boolean ragAvailable
+            @JsonProperty("rag_available") boolean ragAvailable,
+            @JsonProperty("emergency_detected") boolean emergencyDetected,
+            @JsonProperty("trigger_message") String triggerMessage
     ) {}
 
     record IngestRequest(List<String> texts) {}

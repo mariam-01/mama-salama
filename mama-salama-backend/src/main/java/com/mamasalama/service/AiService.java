@@ -8,14 +8,17 @@ import com.mamasalama.dto.response.ChatHistoryResponse;
 import com.mamasalama.dto.response.VoiceAiResponse;
 import com.mamasalama.entity.ChatHistory;
 import com.mamasalama.entity.Checkup;
+import com.mamasalama.entity.EmergencyAlert;
 import com.mamasalama.entity.PatientProfile;
 import com.mamasalama.entity.User;
+import com.mamasalama.enums.AlertSource;
 import com.mamasalama.enums.Language;
 import com.mamasalama.enums.Supplement;
 import com.mamasalama.enums.TriageLevel;
 import com.mamasalama.exception.ResourceNotFoundException;
 import com.mamasalama.repository.ChatHistoryRepository;
 import com.mamasalama.repository.CheckupRepository;
+import com.mamasalama.repository.EmergencyAlertRepository;
 import com.mamasalama.repository.PatientProfileRepository;
 import com.mamasalama.repository.UserRepository;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -46,6 +49,7 @@ public class AiService {
     private final UserRepository userRepository;
     private final PatientProfileRepository profileRepository;
     private final CheckupRepository checkupRepository;
+    private final EmergencyAlertRepository alertRepository;
 
     @Transactional
     public AiResponse ask(AiAskRequest request, String email) {
@@ -71,6 +75,10 @@ public class AiService {
                 .question(request.getQuestion())
                 .answer(aiResponse.answer())
                 .build());
+
+        if (aiResponse.emergencyDetected() && profile != null) {
+            createChatbotAlert(profile, aiResponse.triggerMessage());
+        }
 
         return AiResponse.builder()
                 .answer(aiResponse.answer())
@@ -121,6 +129,10 @@ public class AiService {
                     .answer(aiResponse.answer())
                     .build());
 
+            if (aiResponse.emergencyDetected() && profile != null) {
+                createChatbotAlert(profile, aiResponse.triggerMessage());
+            }
+
             return VoiceAiResponse.builder()
                     .transcription(aiResponse.transcription())
                     .answer(aiResponse.answer())
@@ -136,8 +148,27 @@ public class AiService {
             String transcription,
             String answer,
             String source,
-            @JsonProperty("rag_available") boolean ragAvailable
+            @JsonProperty("rag_available") boolean ragAvailable,
+            @JsonProperty("emergency_detected") boolean emergencyDetected,
+            @JsonProperty("trigger_message") String triggerMessage
     ) {}
+
+    private void createChatbotAlert(PatientProfile profile, String triggerMessage) {
+        try {
+            var prefecture = profile.getPrefecture() != null ? profile.getPrefecture() : profile.getRegion();
+            EmergencyAlert alert = EmergencyAlert.builder()
+                    .patient(profile)
+                    .source(AlertSource.CHATBOT)
+                    .triggerMessage(triggerMessage)
+                    .patientCity(profile.getCity())
+                    .patientPrefecture(prefecture)
+                    .build();
+            alertRepository.save(alert);
+            log.info("Emergency alert auto-created via chatbot for patient {}", profile.getUser().getEmail());
+        } catch (Exception e) {
+            log.error("Failed to create chatbot emergency alert: {}", e.getMessage());
+        }
+    }
 
     private AiServiceClient.PatientContextDto buildPatientContext(PatientProfile profile) {
         if (profile == null) return null;
@@ -195,6 +226,7 @@ public class AiService {
             case ARABIC  -> "ar";
             case DARIJA  -> "darija";
             case AMAZIGH -> "amazigh";
+            case ENGLISH -> "en";
         };
     }
 }
