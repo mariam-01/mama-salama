@@ -1,7 +1,8 @@
 package com.mamasalama.service;
 
 import com.mamasalama.dto.request.DoctorProfileUpdateRequest;
-
+import com.mamasalama.dto.response.CheckupResponse;
+import com.mamasalama.dto.response.DoctorPatientResponse;
 import com.mamasalama.dto.response.DoctorProfileResponse;
 import com.mamasalama.dto.response.PatientDetailResponse;
 import com.mamasalama.dto.response.PatientProfileResponse;
@@ -81,5 +82,22 @@ public class DoctorService {
                 .collect(Collectors.toList());
     }
 
-
+    @Transactional(readOnly = true)
+    public PatientDetailResponse getPatientDetail(String doctorEmail, UUID patientProfileId) {
+        User doctor = userRepository.findByEmail(doctorEmail)
+                .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
+        PatientProfile profile = patientProfileRepository.findById(patientProfileId)
+                .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
+        if (profile.getAssignedDoctor() == null
+                || !profile.getAssignedDoctor().getId().equals(doctor.getId())) {
+            throw new ValidationException("This patient is not assigned to you");
+        }
+        List<CheckupResponse> checkups = checkupRepository
+                .findByPatientOrderByCreatedAtDesc(profile.getUser())
+                .stream().map(CheckupResponse::from).collect(Collectors.toList());
+        return PatientDetailResponse.builder()
+                .profile(PatientProfileResponse.from(profile))
+                .checkupHistory(checkups)
+                .build();
+    }
 }
