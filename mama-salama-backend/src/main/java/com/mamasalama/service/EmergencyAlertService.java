@@ -127,5 +127,19 @@ public class EmergencyAlertService {
         return alertMapper.toResponse(alert);
     }
 
+    @Transactional
+    public EmergencyAlertResponse cancelAlert(UUID alertId, String email) {
+        EmergencyAlert alert = alertRepository.findById(alertId)
+                .orElseThrow(() -> new ResourceNotFoundException("Alert not found"));
 
+        if (!alert.getPatient().getUser().getEmail().equals(email)) {
+            throw new AuthException("You are not authorized to cancel this alert");
+        }
+        if (alert.getStatus() != AlertStatus.PENDING) {
+            throw new ValidationException("Can only cancel PENDING alerts");
+        }
+
+        alert.setStatus(AlertStatus.CANCELLED);
+        return alertMapper.toResponse(alertRepository.save(alert));
+    }
 }
