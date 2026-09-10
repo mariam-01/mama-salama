@@ -8,7 +8,7 @@ import com.mamasalama.dto.request.RegisterRequest;
 import com.mamasalama.dto.request.ResetPasswordRequest;
 import com.mamasalama.dto.response.AuthResponse;
 import com.mamasalama.dto.response.RegisterResponse;
-import com.mamasalama.entity.InviteCode;
+import com.mamasalama.entity.DoctorInvitation;
 import com.mamasalama.entity.OtpToken;
 import com.mamasalama.entity.User;
 import com.mamasalama.enums.InviteCodeStatus;
@@ -17,7 +17,7 @@ import com.mamasalama.enums.Role;
 import com.mamasalama.exception.AuthException;
 import com.mamasalama.exception.ResourceNotFoundException;
 import com.mamasalama.exception.ValidationException;
-import com.mamasalama.repository.InviteCodeRepository;
+import com.mamasalama.repository.DoctorInvitationRepository;
 import com.mamasalama.repository.OtpTokenRepository;
 import com.mamasalama.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +37,7 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final OtpTokenRepository otpTokenRepository;
-    private final InviteCodeRepository inviteCodeRepository;
+    private final DoctorInvitationRepository doctorInvitationRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final SmsService smsService;
@@ -157,7 +157,7 @@ public class AuthService {
 
     @Transactional
     public AuthResponse completeInvite(CompleteInviteRequest request) {
-        InviteCode invite = inviteCodeRepository
+        DoctorInvitation invite = doctorInvitationRepository
                 .findByTokenAndStatusAndExpiresAtAfter(request.getToken(), InviteCodeStatus.PENDING, LocalDateTime.now())
                 .orElseThrow(() -> new ValidationException("Invite link is invalid or has expired"));
 
@@ -190,7 +190,7 @@ public class AuthService {
         invite.setStatus(InviteCodeStatus.ACCEPTED);
         invite.setUsedBy(doctor);
         invite.setUsedAt(LocalDateTime.now());
-        inviteCodeRepository.save(invite);
+        doctorInvitationRepository.save(invite);
 
         log.info("Doctor account created via invite for {}", invite.getEmail());
         return buildAuthResponse(doctor);

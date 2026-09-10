@@ -1,6 +1,6 @@
 package com.mamasalama.service;
 
-
+import com.mamasalama.dto.response.EmergencyAlertResponse;
 import com.mamasalama.mapper.EmergencyAlertMapper;
 import com.mamasalama.dto.request.DoctorCreateRequest;
 import com.mamasalama.dto.request.DoctorInviteRequest;
@@ -10,7 +10,7 @@ import com.mamasalama.dto.response.AdminPatientResponse;
 import com.mamasalama.dto.response.AdminStatsResponse;
 import com.mamasalama.dto.response.InviteCodeResponse;
 import com.mamasalama.entity.EmergencyAlert;
-import com.mamasalama.entity.InviteCode;
+import com.mamasalama.entity.DoctorInvitation;
 import com.mamasalama.entity.PatientProfile;
 import com.mamasalama.entity.User;
 import com.mamasalama.enums.AlertStatus;
@@ -23,7 +23,7 @@ import com.mamasalama.exception.ValidationException;
 import com.mamasalama.mapper.InviteCodeMapper;
 import com.mamasalama.repository.AppointmentRepository;
 import com.mamasalama.repository.EmergencyAlertRepository;
-import com.mamasalama.repository.InviteCodeRepository;
+import com.mamasalama.repository.DoctorInvitationRepository;
 import com.mamasalama.repository.KnowledgeBaseDocumentRepository;
 import com.mamasalama.repository.PatientProfileRepository;
 import com.mamasalama.repository.UserRepository;
@@ -55,7 +55,7 @@ public class AdminService {
     private final EmergencyAlertRepository alertRepository;
     private final AppointmentRepository appointmentRepository;
     private final KnowledgeBaseDocumentRepository documentRepository;
-    private final InviteCodeRepository inviteCodeRepository;
+    private final DoctorInvitationRepository doctorInvitationRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final InviteCodeMapper inviteCodeMapper;
@@ -168,7 +168,7 @@ public class AdminService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new ValidationException("A user with this email is already registered");
         }
-        if (inviteCodeRepository.existsByEmailAndStatus(request.getEmail(), InviteCodeStatus.PENDING)) {
+        if (doctorInvitationRepository.existsByEmailAndStatus(request.getEmail(), InviteCodeStatus.PENDING)) {
             throw new ValidationException("A pending invite has already been sent to this email");
         }
 
@@ -177,7 +177,7 @@ public class AdminService {
 
         String token = generateSecureToken();
 
-        InviteCode inviteCode = InviteCode.builder()
+        DoctorInvitation doctorInvitation = DoctorInvitation.builder()
                 .token(token)
                 .email(request.getEmail())
                 .firstName(request.getFirstName())
@@ -192,7 +192,7 @@ public class AdminService {
                 .expiresAt(LocalDateTime.now().plusHours(48))
                 .build();
 
-        inviteCode = inviteCodeRepository.save(inviteCode);
+        doctorInvitation = doctorInvitationRepository.save(doctorInvitation);
 
         String inviteLink = frontendUrl + "/complete-registration?token=" + token;
         try {
@@ -202,12 +202,12 @@ public class AdminService {
         }
 
         log.info("Invite sent to {} by {}", request.getEmail(), adminEmail);
-        return inviteCodeMapper.toResponse(inviteCode);
+        return inviteCodeMapper.toResponse(doctorInvitation);
     }
 
     @Transactional(readOnly = true)
     public List<InviteCodeResponse> listInviteCodes() {
-        return inviteCodeMapper.toResponseList(inviteCodeRepository.findAll());
+        return inviteCodeMapper.toResponseList(doctorInvitationRepository.findAll());
     }
 
     private String generateTempPassword() {

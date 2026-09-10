@@ -1,7 +1,7 @@
 package com.mamasalama.mapper;
 
 import com.mamasalama.dto.response.InviteCodeResponse;
-import com.mamasalama.entity.InviteCode;
+import com.mamasalama.entity.DoctorInvitation;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 
@@ -12,7 +12,7 @@ public interface InviteCodeMapper {
 
     @Mapping(target = "createdByEmail", source = "createdBy.email")
     @Mapping(target = "usedByEmail", source = "usedBy.email")
-    InviteCodeResponse toResponse(InviteCode inviteCode);
+    InviteCodeResponse toResponse(DoctorInvitation doctorInvitation);
 
-    List<InviteCodeResponse> toResponseList(List<InviteCode> inviteCodes);
+    List<InviteCodeResponse> toResponseList(List<DoctorInvitation> doctorInvitations);
 }

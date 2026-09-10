@@ -1,6 +1,6 @@
 package com.mamasalama.repository;
 
-import com.mamasalama.entity.InviteCode;
+import com.mamasalama.entity.DoctorInvitation;
 import com.mamasalama.enums.InviteCodeStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
@@ -10,9 +10,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface InviteCodeRepository extends JpaRepository<InviteCode, UUID> {
+public interface DoctorInvitationRepository extends JpaRepository<DoctorInvitation, UUID> {
 
-    Optional<InviteCode> findByTokenAndStatusAndExpiresAtAfter(
+    Optional<DoctorInvitation> findByTokenAndStatusAndExpiresAtAfter(
             String token, InviteCodeStatus status, LocalDateTime now);
 
     boolean existsByEmailAndStatus(String email, InviteCodeStatus status);

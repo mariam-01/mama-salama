@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class InviteCode extends AbstractEntity {
+public class DoctorInvitation extends AbstractEntity {
 
     @Column(unique = true, nullable = false)
     private String token;
