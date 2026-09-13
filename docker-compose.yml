@@ -131,7 +131,7 @@ services:
   # ── Frontend (React + Nginx) ──────────────────────────────────────────────────
   frontend:
     build:
-      context: ../mama-salama-frontend
+      context: ./mama-salama-frontend
     ports:
       - "80:80"
     environment:
