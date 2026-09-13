@@ -8,6 +8,7 @@ import com.mamasalama.dto.request.UpdateUserStatusRequest;
 import com.mamasalama.dto.response.AdminDoctorResponse;
 import com.mamasalama.dto.response.AdminPatientResponse;
 import com.mamasalama.dto.response.AdminStatsResponse;
+import com.mamasalama.dto.response.EmergencyAlertResponse;
 import com.mamasalama.dto.response.InviteCodeResponse;
 import com.mamasalama.entity.EmergencyAlert;
 import com.mamasalama.entity.InviteCode;
