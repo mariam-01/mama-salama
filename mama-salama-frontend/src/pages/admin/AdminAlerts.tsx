@@ -91,7 +91,7 @@ export default function AdminAlerts() {
                 <InfoRow label="Patiente" value={alert.patientFullName} />
                 <InfoRow label="Email" value={alert.patientEmail} />
                 <InfoRow label="Ville" value={alert.patientCity} />
-                <InfoRow label="Province" value={alert.patientProvince} />
+                <InfoRow label="Préfecture" value={alert.patientPrefecture} />
                 <InfoRow label="Semaine grossesse" value={alert.patientPregnancyWeek != null ? `SA ${alert.patientPregnancyWeek}` : undefined} />
                 <InfoRow label="Médecins notifiés" value={alert.matchedDoctorsCount != null ? String(alert.matchedDoctorsCount) : undefined} />
               </div>

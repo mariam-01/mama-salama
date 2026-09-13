@@ -44,7 +44,8 @@ export interface DoctorInvite {
   firstName?: string
   lastName?: string
   city?: string
-  province?: string
+  prefecture?: string
+  region?: string
   hospital?: string
   status: 'PENDING' | 'ACCEPTED'
   createdByEmail?: string
