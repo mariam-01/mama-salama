@@ -49,9 +49,14 @@ public class PatientProfileResponse {
 
     public static PatientProfileResponse from(PatientProfile profile) {
         // Always recompute from LMP so the week advances automatically over time
-        Integer currentWeek = profile.getLastMenstrualPeriod() != null
-                ? (int) ChronoUnit.WEEKS.between(profile.getLastMenstrualPeriod(), LocalDate.now())
-                : profile.getPregnancyWeek();
+         Integer currentWeek = profile.getPregnancyWeek();
+
+        if (profile.getLastMenstrualPeriod() != null) {
+            currentWeek = (int) ChronoUnit.WEEKS.between(
+                    profile.getLastMenstrualPeriod(),
+                    LocalDate.now()
+            );
+        }
 
         return PatientProfileResponse.builder()
                 .id(profile.getId())

@@ -76,7 +76,7 @@ class AuthServiceTest {
         @DisplayName("success with EMAIL channel → saves user and sends email OTP")
         void success_emailChannel() {
             RegisterRequest req = new RegisterRequest(
-                    "new@test.ma", "password123", null, OtpChannel.EMAIL);
+                    "new@test.ma", "password123", null, OtpChannel.EMAIL, Role.PATIENT, null);
 
             when(userRepository.existsByEmail("new@test.ma")).thenReturn(false);
             when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -93,7 +93,7 @@ class AuthServiceTest {
         @DisplayName("success with SMS channel → saves user and sends SMS OTP")
         void success_smsChannel() {
             RegisterRequest req = new RegisterRequest(
-                    "sms@test.ma", "password123", "+212600000002", OtpChannel.SMS);
+                    "sms@test.ma", "password123", "+212600000002", OtpChannel.SMS, Role.PATIENT, null);
 
             when(userRepository.existsByEmail("sms@test.ma")).thenReturn(false);
             when(userRepository.save(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -109,7 +109,7 @@ class AuthServiceTest {
         @DisplayName("duplicate email → throws AuthException")
         void duplicateEmail_throwsAuthException() {
             RegisterRequest req = new RegisterRequest(
-                    "fatima@test.ma", "password123", null, OtpChannel.EMAIL);
+                    "fatima@test.ma", "password123", null, OtpChannel.EMAIL, Role.PATIENT, null);
             when(userRepository.existsByEmail("fatima@test.ma")).thenReturn(true);
 
             assertThatThrownBy(() -> authService.register(req))
@@ -121,7 +121,7 @@ class AuthServiceTest {
         @DisplayName("SMS channel without phone → throws ValidationException")
         void smsChannelMissingPhone_throwsValidationException() {
             RegisterRequest req = new RegisterRequest(
-                    "new@test.ma", "password123", null, OtpChannel.SMS);
+                    "new@test.ma", "password123", null, OtpChannel.SMS, Role.PATIENT, null);
             when(userRepository.existsByEmail("new@test.ma")).thenReturn(false);
 
             assertThatThrownBy(() -> authService.register(req))
@@ -133,7 +133,7 @@ class AuthServiceTest {
         @DisplayName("saved user is not enabled until OTP verified")
         void savedUser_isDisabled() {
             RegisterRequest req = new RegisterRequest(
-                    "new@test.ma", "pass", null, OtpChannel.EMAIL);
+                    "new@test.ma", "pass", null, OtpChannel.EMAIL, Role.PATIENT, null);
             when(userRepository.existsByEmail(anyString())).thenReturn(false);
             when(otpTokenRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
