@@ -11,11 +11,42 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d mama_salama_db"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - mama-net
+
+  # ── Keycloak (Identity Provider) ─────────────────────────────────────────────
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0
+    command: start-dev --import-realm
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/mama_salama_db
+      KC_DB_USERNAME: ${DB_USERNAME}
+      KC_DB_PASSWORD: ${DB_PASSWORD}
+      KC_DB_SCHEMA: keycloak
+      KC_HTTP_PORT: 8080
+    volumes:
+      - ./keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ./keycloak/themes/mama-salama:/opt/keycloak/themes/mama-salama:ro
+    ports:
+      - "8090:8080"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 15s
+      timeout: 10s
+      retries: 15
+      start_period: 60s
     networks:
       - mama-net
 
@@ -66,8 +97,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       # Service discovery — use container name instead of localhost
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eureka:8761/eureka/
-      # Secrets (read from root .env)
-      JWT_SECRET: ${JWT_SECRET}
+      KEYCLOAK_INTERNAL_URL: http://keycloak:8080
+      KEYCLOAK_BACKEND_CLIENT_SECRET: ${KEYCLOAK_BACKEND_CLIENT_SECRET:-mama-salama-backend-secret}
       MAIL_HOST: ${MAIL_HOST:-smtp.gmail.com}
       MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_USERNAME: ${MAIL_USERNAME}
@@ -88,6 +119,8 @@ services:
       eureka:
         condition: service_healthy
       minio:
+        condition: service_healthy
+      keycloak:
         condition: service_healthy
     networks:
       - mama-net
@@ -132,6 +165,8 @@ services:
   frontend:
     build:
       context: ./mama-salama-frontend
+      args:
+        KEYCLOAK_URL: ${KEYCLOAK_EXTERNAL_URL:-http://localhost:8090}
     ports:
       - "80:80"
     environment:
