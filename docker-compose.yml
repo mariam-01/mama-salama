@@ -164,7 +164,7 @@ services:
   # ── Frontend (React + Nginx) ──────────────────────────────────────────────────
   frontend:
     build:
-      context: ./mama-salama-frontend
+      context: ../mama-salama-frontend
       args:
         KEYCLOAK_URL: ${KEYCLOAK_EXTERNAL_URL:-http://localhost:8090}
     ports:
