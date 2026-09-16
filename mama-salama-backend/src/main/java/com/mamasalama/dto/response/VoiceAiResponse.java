@@ -13,4 +13,5 @@ public class VoiceAiResponse {
     private String transcription;
     private String answer;
     private String source;
+    private boolean alertCreated;
 }

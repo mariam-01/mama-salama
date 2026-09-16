@@ -76,13 +76,13 @@ public class AiService {
                 .answer(aiResponse.answer())
                 .build());
 
-        if (aiResponse.emergencyDetected() && profile != null) {
-            createChatbotAlert(profile, aiResponse.triggerMessage());
-        }
+        boolean alertCreated = aiResponse.emergencyDetected() && profile != null
+                && createChatbotAlert(profile, aiResponse.triggerMessage());
 
         return AiResponse.builder()
                 .answer(aiResponse.answer())
                 .source(aiResponse.source())
+                .alertCreated(alertCreated)
                 .build();
     }
 
@@ -129,14 +129,14 @@ public class AiService {
                     .answer(aiResponse.answer())
                     .build());
 
-            if (aiResponse.emergencyDetected() && profile != null) {
-                createChatbotAlert(profile, aiResponse.triggerMessage());
-            }
+            boolean alertCreated = aiResponse.emergencyDetected() && profile != null
+                    && createChatbotAlert(profile, aiResponse.triggerMessage());
 
             return VoiceAiResponse.builder()
                     .transcription(aiResponse.transcription())
                     .answer(aiResponse.answer())
                     .source(aiResponse.source())
+                    .alertCreated(alertCreated)
                     .build();
 
         } catch (JsonProcessingException e) {
@@ -153,7 +153,7 @@ public class AiService {
             @JsonProperty("trigger_message") String triggerMessage
     ) {}
 
-    private void createChatbotAlert(PatientProfile profile, String triggerMessage) {
+    private boolean createChatbotAlert(PatientProfile profile, String triggerMessage) {
         try {
             var prefecture = profile.getPrefecture() != null ? profile.getPrefecture() : profile.getRegion();
             EmergencyAlert alert = EmergencyAlert.builder()
@@ -165,8 +165,10 @@ public class AiService {
                     .build();
             alertRepository.save(alert);
             log.info("Emergency alert auto-created via chatbot for patient {}", profile.getUser().getEmail());
+            return true;
         } catch (Exception e) {
             log.error("Failed to create chatbot emergency alert: {}", e.getMessage());
+            return false;
         }
     }
 

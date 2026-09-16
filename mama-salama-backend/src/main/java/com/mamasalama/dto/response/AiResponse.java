@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class AiResponse {
     private String answer;
     private String source;
+    private boolean alertCreated;
 }
