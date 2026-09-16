@@ -19,6 +19,12 @@ public interface OtpTokenRepository extends JpaRepository<OtpToken, UUID> {
             @Param("code") String code,
             @Param("now") LocalDateTime now);
 
+    @Query("SELECT o FROM OtpToken o WHERE o.user.email = :email AND o.code = :code AND o.used = false AND o.expiresAt > :now")
+    Optional<OtpToken> findValidOtpByEmail(
+            @Param("email") String email,
+            @Param("code") String code,
+            @Param("now") LocalDateTime now);
+
     @Transactional
     @Modifying
     @Query("UPDATE OtpToken o SET o.used = true WHERE o.user.id = :userId AND o.used = false")

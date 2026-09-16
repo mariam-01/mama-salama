@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
@@ -34,48 +34,48 @@ public class DoctorController {
     @GetMapping("/me")
     @Operation(summary = "Get the authenticated doctor's profile")
     public ResponseEntity<ApiResponse<DoctorProfileResponse>> getProfile(
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(ApiResponse.success(
-                doctorService.getProfile(userDetails.getUsername()),
+                doctorService.getProfile(jwt.getClaimAsString("email")),
                 "Profile retrieved successfully"));
     }
 
     @PutMapping("/me")
     @Operation(summary = "Update the authenticated doctor's profile")
     public ResponseEntity<ApiResponse<DoctorProfileResponse>> updateProfile(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal Jwt jwt,
             @RequestBody DoctorProfileUpdateRequest request) {
         return ResponseEntity.ok(ApiResponse.success(
-                doctorService.updateProfile(userDetails.getUsername(), request),
+                doctorService.updateProfile(jwt.getClaimAsString("email"), request),
                 "Profile updated successfully"));
     }
 
     @GetMapping("/patients")
     @Operation(summary = "Get all patients assigned to the authenticated doctor")
     public ResponseEntity<ApiResponse<List<DoctorPatientResponse>>> getMyPatients(
-            @AuthenticationPrincipal UserDetails userDetails) {
+            @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.ok(ApiResponse.success(
-                doctorService.getMyPatients(userDetails.getUsername()),
+                doctorService.getMyPatients(jwt.getClaimAsString("email")),
                 "Patients retrieved successfully"));
     }
 
     @GetMapping("/patients/search")
     @Operation(summary = "Search assigned patients by name or email")
     public ResponseEntity<ApiResponse<List<DoctorPatientResponse>>> searchPatients(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal Jwt jwt,
             @RequestParam String query) {
         return ResponseEntity.ok(ApiResponse.success(
-                doctorService.searchMyPatients(userDetails.getUsername(), query),
+                doctorService.searchMyPatients(jwt.getClaimAsString("email"), query),
                 "Search completed"));
     }
 
     @GetMapping("/patients/{patientId}")
     @Operation(summary = "Get full patient detail with checkup history")
     public ResponseEntity<ApiResponse<PatientDetailResponse>> getPatientDetail(
-            @AuthenticationPrincipal UserDetails userDetails,
+            @AuthenticationPrincipal Jwt jwt,
             @PathVariable UUID patientId) {
         return ResponseEntity.ok(ApiResponse.success(
-                doctorService.getPatientDetail(userDetails.getUsername(), patientId),
+                doctorService.getPatientDetail(jwt.getClaimAsString("email"), patientId),
                 "Patient detail retrieved successfully"));
     }
 }

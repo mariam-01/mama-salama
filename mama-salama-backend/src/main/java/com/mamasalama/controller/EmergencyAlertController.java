@@ -12,7 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -32,17 +32,17 @@ public class EmergencyAlertController {
     @Operation(summary = "Create an emergency alert")
     public ResponseEntity<EmergencyAlertResponse> createAlert(
             @Valid @RequestBody EmergencyAlertRequest request,
-            @AuthenticationPrincipal UserDetails user) {
+            @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(alertService.createAlert(request, user.getUsername()));
+                .body(alertService.createAlert(request, jwt.getClaimAsString("email")));
     }
 
     @GetMapping("/pending")
     @PreAuthorize("hasRole('DOCTOR')")
     @Operation(summary = "Get pending alerts in doctor's area")
     public ResponseEntity<List<EmergencyAlertResponse>> getPending(
-            @AuthenticationPrincipal UserDetails user) {
-        return ResponseEntity.ok(alertService.getPendingForDoctor(user.getUsername()));
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(alertService.getPendingForDoctor(jwt.getClaimAsString("email")));
     }
 
     @PutMapping("/{alertId}/claim")
@@ -50,8 +50,8 @@ public class EmergencyAlertController {
     @Operation(summary = "Claim a pending alert")
     public ResponseEntity<EmergencyAlertResponse> claimAlert(
             @PathVariable UUID alertId,
-            @AuthenticationPrincipal UserDetails user) {
-        return ResponseEntity.ok(alertService.claimAlert(alertId, user.getUsername()));
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(alertService.claimAlert(alertId, jwt.getClaimAsString("email")));
     }
 
     @PutMapping("/{alertId}/cancel")
@@ -59,8 +59,8 @@ public class EmergencyAlertController {
     @Operation(summary = "Cancel a pending alert")
     public ResponseEntity<EmergencyAlertResponse> cancelAlert(
             @PathVariable UUID alertId,
-            @AuthenticationPrincipal UserDetails user) {
-        return ResponseEntity.ok(alertService.cancelAlert(alertId, user.getUsername()));
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(alertService.cancelAlert(alertId, jwt.getClaimAsString("email")));
     }
 
     @PutMapping("/{alertId}/resolve")
@@ -68,7 +68,7 @@ public class EmergencyAlertController {
     @Operation(summary = "Resolve a claimed alert")
     public ResponseEntity<EmergencyAlertResponse> resolveAlert(
             @PathVariable UUID alertId,
-            @AuthenticationPrincipal UserDetails user) {
-        return ResponseEntity.ok(alertService.resolveAlert(alertId, user.getUsername()));
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(alertService.resolveAlert(alertId, jwt.getClaimAsString("email")));
     }
 }

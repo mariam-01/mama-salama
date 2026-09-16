@@ -1,90 +1,62 @@
 package com.mamasalama.controller;
 
-import com.mamasalama.dto.request.CompleteInviteRequest;
-import com.mamasalama.dto.request.ForgotPasswordRequest;
-import com.mamasalama.dto.request.LoginRequest;
-import com.mamasalama.dto.request.OtpVerifyRequest;
-import com.mamasalama.dto.request.RegisterRequest;
-import com.mamasalama.dto.request.ResetPasswordRequest;
+import com.mamasalama.dto.request.*;
 import com.mamasalama.dto.response.ApiResponse;
-import com.mamasalama.dto.response.AuthResponse;
-import com.mamasalama.dto.response.RegisterResponse;
-import com.mamasalama.enums.OtpChannel;
 import com.mamasalama.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
-@Tag(name = "Authentication", description = "Register, login, and OTP verification")
+@Tag(name = "Authentication", description = "OTP verification and password reset (login/register handled by Keycloak)")
 public class AuthController {
 
     private final AuthService authService;
 
-    @PostMapping("/register")
-    @Operation(summary = "Register a new patient account")
-    public ResponseEntity<ApiResponse<RegisterResponse>> register(
-            @Valid @RequestBody RegisterRequest request) {
-        RegisterResponse response = authService.register(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response, "Registration successful. Please verify your OTP."));
-    }
-
-    @PostMapping("/login")
-    @Operation(summary = "Authenticate and receive a JWT token")
-    public ResponseEntity<ApiResponse<AuthResponse>> login(
-            @Valid @RequestBody LoginRequest request) {
-        AuthResponse response = authService.login(request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Login successful"));
+    @PostMapping("/complete-invite")
+    @Operation(summary = "Complete doctor registration using an invite link token")
+    public ResponseEntity<ApiResponse<Void>> completeInvite(
+            @Valid @RequestBody CompleteInviteRequest request) {
+        authService.completeInvite(request);
+        return ResponseEntity.ok(ApiResponse.success(null,
+                "Account created successfully. Please log in."));
     }
 
     @PostMapping("/verify-otp")
-    @Operation(summary = "Verify OTP and activate the account")
-    public ResponseEntity<ApiResponse<AuthResponse>> verifyOtp(
+    @Operation(summary = "Verify the 6-digit OTP sent after registration")
+    public ResponseEntity<ApiResponse<Void>> verifyOtp(
             @Valid @RequestBody OtpVerifyRequest request) {
-        AuthResponse response = authService.verifyOtp(request);
-        return ResponseEntity.ok(ApiResponse.success(response, "OTP verified successfully"));
+        authService.verifyOtp(request.getEmail(), request.getCode());
+        return ResponseEntity.ok(ApiResponse.success(null, "Account verified successfully"));
+    }
+
+    @PostMapping("/resend-otp")
+    @Operation(summary = "Resend a new OTP to the patient's email or phone")
+    public ResponseEntity<ApiResponse<Void>> resendOtp(
+            @Valid @RequestBody ResendOtpRequest request) {
+        authService.resendOtp(request);
+        return ResponseEntity.ok(ApiResponse.success(null, "OTP sent"));
     }
 
     @PostMapping("/forgot-password")
-    @Operation(summary = "Request a password reset OTP — sent to email or SMS")
-    public ResponseEntity<ApiResponse<RegisterResponse>> forgotPassword(
+    @Operation(summary = "Send a password-reset OTP to the patient's email or phone")
+    public ResponseEntity<ApiResponse<Void>> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request) {
-        RegisterResponse response = authService.forgotPassword(request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Password reset code sent"));
+        authService.forgotPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(null,
+                "If this email is registered, a reset code has been sent"));
     }
 
     @PostMapping("/reset-password")
-    @Operation(summary = "Verify OTP and set a new password")
-    public ResponseEntity<ApiResponse<AuthResponse>> resetPassword(
+    @Operation(summary = "Reset password using the OTP code received by email or SMS")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
             @Valid @RequestBody ResetPasswordRequest request) {
-        AuthResponse response = authService.resetPassword(request);
-        return ResponseEntity.ok(ApiResponse.success(response, "Password reset successfully"));
-    }
-
-    @PostMapping("/complete-invite")
-    @Operation(summary = "Complete doctor registration using an invite link token")
-    public ResponseEntity<ApiResponse<AuthResponse>> completeInvite(
-            @Valid @RequestBody CompleteInviteRequest request) {
-        AuthResponse response = authService.completeInvite(request);
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body(ApiResponse.success(response, "Account created successfully"));
-    }
-
-    @PostMapping("/resend-otp/{userId}")
-    @Operation(summary = "Resend OTP — specify channel: SMS or EMAIL")
-    public ResponseEntity<ApiResponse<Void>> resendOtp(
-            @PathVariable UUID userId,
-            @RequestParam(defaultValue = "EMAIL") OtpChannel channel) {
-        authService.resendOtp(userId, channel);
-        return ResponseEntity.ok(ApiResponse.success(null, "OTP resent via " + channel));
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.success(null, "Password reset successfully"));
     }
 }

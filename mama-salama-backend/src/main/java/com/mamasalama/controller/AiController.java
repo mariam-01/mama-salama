@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,16 +34,16 @@ public class AiController {
     @Operation(summary = "Ask the AI a pregnancy-related question")
     public ResponseEntity<ApiResponse<AiResponse>> ask(
             @Valid @RequestBody AiAskRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        AiResponse response = aiService.ask(request, userDetails.getUsername());
+            @AuthenticationPrincipal Jwt jwt) {
+        AiResponse response = aiService.ask(request, jwt.getClaimAsString("email"));
         return ResponseEntity.ok(ApiResponse.success(response, "Response generated successfully"));
     }
 
     @GetMapping("/history")
     @Operation(summary = "Get the authenticated user's chat history")
     public ResponseEntity<ApiResponse<List<ChatHistoryResponse>>> getHistory(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        List<ChatHistoryResponse> responses = aiService.getHistory(userDetails.getUsername());
+            @AuthenticationPrincipal Jwt jwt) {
+        List<ChatHistoryResponse> responses = aiService.getHistory(jwt.getClaimAsString("email"));
         return ResponseEntity.ok(ApiResponse.success(responses, "Chat history retrieved successfully"));
     }
 
@@ -52,8 +52,8 @@ public class AiController {
     public ResponseEntity<ApiResponse<VoiceAiResponse>> voiceAsk(
             @RequestParam("file") MultipartFile file,
             @RequestParam(value = "language", defaultValue = "FRENCH") Language language,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        VoiceAiResponse response = aiService.voiceAsk(file, language, userDetails.getUsername());
+            @AuthenticationPrincipal Jwt jwt) {
+        VoiceAiResponse response = aiService.voiceAsk(file, language, jwt.getClaimAsString("email"));
         return ResponseEntity.ok(ApiResponse.success(response, "Voice response generated successfully"));
     }
 }

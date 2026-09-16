@@ -1,5 +1,6 @@
 package com.mamasalama.service;
 
+import com.mamasalama.config.KeycloakAdminClient;
 import com.mamasalama.dto.response.EmergencyAlertResponse;
 import com.mamasalama.mapper.EmergencyAlertMapper;
 import com.mamasalama.dto.request.DoctorCreateRequest;
@@ -30,11 +31,9 @@ import com.mamasalama.repository.PatientProfileRepository;
 import com.mamasalama.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import org.springframework.beans.factory.annotation.Value;
 
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
@@ -57,10 +56,10 @@ public class AdminService {
     private final AppointmentRepository appointmentRepository;
     private final KnowledgeBaseDocumentRepository documentRepository;
     private final DoctorInvitationRepository doctorInvitationRepository;
-    private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
     private final InviteCodeMapper inviteCodeMapper;
     private final EmergencyAlertMapper alertMapper;
+    private final KeycloakAdminClient keycloakAdminClient;
 
     @Transactional(readOnly = true)
     public AdminStatsResponse getStats() {
@@ -98,15 +97,15 @@ public class AdminService {
     public AdminPatientResponse updatePatientStatus(UUID patientId, UpdateUserStatusRequest request) {
         User user = userRepository.findById(patientId)
                 .orElseThrow(() -> new ResourceNotFoundException("Patient not found"));
-        if (user.getRole() != Role.PATIENT) {
-            throw new ValidationException("User is not a patient");
-        }
+        if (user.getRole() != Role.PATIENT) throw new ValidationException("User is not a patient");
+
         user.setEnabled(request.getActive());
         userRepository.save(user);
+        keycloakAdminClient.setUserEnabled(user.getEmail(), request.getActive());
+
         PatientProfile profile = profileRepository.findByUser(user).orElse(null);
         return AdminPatientResponse.from(user, profile);
     }
-
 
     @Transactional(readOnly = true)
     public List<AdminDoctorResponse> getDoctors(String search) {
@@ -123,14 +122,16 @@ public class AdminService {
         if (userRepository.existsByEmail(request.getEmail())) {
             throw new AuthException("Email already registered");
         }
-        User admin = userRepository.findByEmail(adminEmail)
-                .orElseThrow(() -> new ResourceNotFoundException("Admin not found"));
 
         String tempPassword = generateTempPassword();
 
+        // Create in Keycloak with temporary password (forces password reset on first login)
+        keycloakAdminClient.createUser(request.getEmail(), tempPassword,
+                request.getFullName(), "", "DOCTOR", true);
+
         User doctor = User.builder()
                 .email(request.getEmail())
-                .password(passwordEncoder.encode(tempPassword))
+                .password("")
                 .phone(request.getPhone())
                 .city(request.getCity())
                 .prefecture(request.getPrefecture())
@@ -148,19 +149,19 @@ public class AdminService {
             log.warn("Failed to send doctor temp password email: {}", e.getMessage());
         }
 
-        long patientCount = profileRepository.countByAssignedDoctor(doctor);
-        return AdminDoctorResponse.from(doctor, patientCount);
+        return AdminDoctorResponse.from(doctor, 0L);
     }
 
     @Transactional
     public AdminDoctorResponse updateDoctorStatus(UUID doctorId, UpdateUserStatusRequest request) {
         User user = userRepository.findById(doctorId)
                 .orElseThrow(() -> new ResourceNotFoundException("Doctor not found"));
-        if (user.getRole() != Role.DOCTOR) {
-            throw new ValidationException("User is not a doctor");
-        }
+        if (user.getRole() != Role.DOCTOR) throw new ValidationException("User is not a doctor");
+
         user.setEnabled(request.getActive());
         userRepository.save(user);
+        keycloakAdminClient.setUserEnabled(user.getEmail(), request.getActive());
+
         return AdminDoctorResponse.from(user, profileRepository.countByAssignedDoctor(user));
     }
 

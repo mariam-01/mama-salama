@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -30,8 +30,8 @@ public class CheckupController {
     @Operation(summary = "Submit a daily health checkup — returns WHO-based triage level")
     public ResponseEntity<ApiResponse<CheckupResponse>> submitCheckup(
             @Valid @RequestBody CheckupRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        CheckupResponse response = checkupService.submit(request, userDetails.getUsername());
+            @AuthenticationPrincipal Jwt jwt) {
+        CheckupResponse response = checkupService.submit(request, jwt.getClaimAsString("email"));
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response, "Checkup submitted successfully"));
     }
@@ -39,16 +39,16 @@ public class CheckupController {
     @GetMapping("/checkup/history")
     @Operation(summary = "Get all checkups for the authenticated patient")
     public ResponseEntity<ApiResponse<List<CheckupResponse>>> getHistory(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        List<CheckupResponse> responses = checkupService.getHistory(userDetails.getUsername());
+            @AuthenticationPrincipal Jwt jwt) {
+        List<CheckupResponse> responses = checkupService.getHistory(jwt.getClaimAsString("email"));
         return ResponseEntity.ok(ApiResponse.success(responses, "Checkup history retrieved successfully"));
     }
 
     @GetMapping("/checkup/latest")
     @Operation(summary = "Get the most recent checkup")
     public ResponseEntity<ApiResponse<CheckupResponse>> getLatest(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        CheckupResponse response = checkupService.getLatest(userDetails.getUsername());
+            @AuthenticationPrincipal Jwt jwt) {
+        CheckupResponse response = checkupService.getLatest(jwt.getClaimAsString("email"));
         return ResponseEntity.ok(ApiResponse.success(response, "Latest checkup retrieved successfully"));
     }
 }

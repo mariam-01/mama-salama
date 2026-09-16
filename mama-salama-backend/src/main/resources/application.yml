@@ -21,7 +21,6 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-#        format_sql: true
     open-in-view: false
 
   jackson:
@@ -41,6 +40,12 @@ spring:
           starttls:
             enable: true
 
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${KEYCLOAK_INTERNAL_URL:http://localhost:8090}/realms/mama-salama/protocol/openid-connect/certs
+
 minio:
   endpoint: ${MINIO_ENDPOINT}
   access-key: ${MINIO_ACCESS_KEY}
@@ -59,6 +64,12 @@ eureka:
   instance:
     prefer-ip-address: true
 
+keycloak:
+  server-url: ${KEYCLOAK_INTERNAL_URL:http://localhost:8090}
+  realm: mama-salama
+  admin-client-id: mama-salama-backend
+  admin-client-secret: ${KEYCLOAK_BACKEND_CLIENT_SECRET:mama-salama-backend-secret}
+
 application:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}
   admin:
@@ -70,12 +81,6 @@ application:
       - http://localhost:3000
       - http://localhost:8080
       - https://7281-41-141-41-215.ngrok-free.app
-  security:
-    jwt:
-      secret-key: ${JWT_SECRET:QE5jUmZValhucjI3NXU4eC9BP0QoRytLYlBkU2dWa1lw}
-      expiration: 86400000        # 24 hours
-      refresh-token:
-        expiration: 604800000     # 7 days
 
 springdoc:
   server-url: http://localhost:8080/api/core
@@ -87,7 +92,6 @@ springdoc:
     url: /api/core/v3/api-docs
     tags-sorter: alpha
     operations-sorter: method
-
 
 management:
   endpoints:

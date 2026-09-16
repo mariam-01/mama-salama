@@ -13,7 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -33,25 +33,25 @@ public class AppointmentController {
     @Operation(summary = "Propose an appointment with multiple time slots")
     public ResponseEntity<AppointmentResponse> proposeAppointment(
             @Valid @RequestBody AppointmentRequest request,
-            @AuthenticationPrincipal UserDetails user) {
+            @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(appointmentService.proposeAppointment(request, user.getUsername()));
+                .body(appointmentService.proposeAppointment(request, jwt.getClaimAsString("email")));
     }
 
     @GetMapping("/doctor")
     @PreAuthorize("hasRole('DOCTOR')")
     @Operation(summary = "List all appointments for the authenticated doctor")
     public ResponseEntity<List<AppointmentResponse>> getDoctorAppointments(
-            @AuthenticationPrincipal UserDetails user) {
-        return ResponseEntity.ok(appointmentService.getDoctorAppointments(user.getUsername()));
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(appointmentService.getDoctorAppointments(jwt.getClaimAsString("email")));
     }
 
     @GetMapping("/patient")
     @PreAuthorize("hasRole('PATIENT')")
     @Operation(summary = "List all appointments for the authenticated patient")
     public ResponseEntity<List<AppointmentResponse>> getPatientAppointments(
-            @AuthenticationPrincipal UserDetails user) {
-        return ResponseEntity.ok(appointmentService.getPatientAppointments(user.getUsername()));
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(appointmentService.getPatientAppointments(jwt.getClaimAsString("email")));
     }
 
     @PutMapping("/{appointmentId}/confirm")
@@ -60,8 +60,8 @@ public class AppointmentController {
     public ResponseEntity<AppointmentResponse> confirmAppointment(
             @PathVariable UUID appointmentId,
             @Valid @RequestBody ConfirmSlotRequest request,
-            @AuthenticationPrincipal UserDetails user) {
-        return ResponseEntity.ok(appointmentService.confirmAppointment(appointmentId, request, user.getUsername()));
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(appointmentService.confirmAppointment(appointmentId, request, jwt.getClaimAsString("email")));
     }
 
     @PutMapping("/{appointmentId}/reject")
@@ -69,8 +69,8 @@ public class AppointmentController {
     @Operation(summary = "Reject a proposed appointment")
     public ResponseEntity<AppointmentResponse> rejectAppointment(
             @PathVariable UUID appointmentId,
-            @AuthenticationPrincipal UserDetails user) {
-        return ResponseEntity.ok(appointmentService.rejectAppointment(appointmentId, user.getUsername()));
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(appointmentService.rejectAppointment(appointmentId, jwt.getClaimAsString("email")));
     }
 
     @PutMapping("/{appointmentId}/complete")
@@ -78,8 +78,8 @@ public class AppointmentController {
     @Operation(summary = "Mark an appointment as completed")
     public ResponseEntity<AppointmentResponse> completeAppointment(
             @PathVariable UUID appointmentId,
-            @AuthenticationPrincipal UserDetails user) {
-        return ResponseEntity.ok(appointmentService.completeAppointment(appointmentId, user.getUsername()));
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(appointmentService.completeAppointment(appointmentId, jwt.getClaimAsString("email")));
     }
 
     @PutMapping("/{appointmentId}/cancel")
@@ -87,7 +87,7 @@ public class AppointmentController {
     @Operation(summary = "Cancel an appointment")
     public ResponseEntity<AppointmentResponse> cancelAppointment(
             @PathVariable UUID appointmentId,
-            @AuthenticationPrincipal UserDetails user) {
-        return ResponseEntity.ok(appointmentService.cancelAppointment(appointmentId, user.getUsername()));
+            @AuthenticationPrincipal Jwt jwt) {
+        return ResponseEntity.ok(appointmentService.cancelAppointment(appointmentId, jwt.getClaimAsString("email")));
     }
 }

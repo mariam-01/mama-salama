@@ -20,6 +20,9 @@ public class EmailService {
     @Value("${spring.mail.username}")
     private String fromEmail;
 
+    @Value("${application.frontend-url}")
+    private String frontendUrl;
+
     public void sendOtp(String toEmail, String code) {
         send(toEmail,
              "ماما سلامة | Code de vérification",
@@ -129,12 +132,71 @@ public class EmailService {
     }
 
     public void sendDoctorTempPasswordEmail(String doctorEmail, String fullName, String tempPassword) {
-        String html = buildInfoHtml(
-                "Bienvenue sur Mama Salama",
-                "مرحباً بك في ماما سلامة",
-                "Bonjour Dr " + fullName + ", votre compte médecin a été créé. Mot de passe temporaire : <strong>" + tempPassword + "</strong>. Veuillez le changer après votre première connexion.",
-                "مرحباً الدكتور " + fullName + "، تم إنشاء حسابك. كلمة المرور المؤقتة: <strong>" + tempPassword + "</strong>. يرجى تغييرها بعد تسجيل الدخول الأول.",
-                "#C2617A");
+        String loginUrl = frontendUrl + "/login";
+        String html = """
+            <!DOCTYPE html>
+            <html lang="fr">
+            <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+            <body style="margin:0;padding:0;background-color:#F7F3EE;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Arial,sans-serif;">
+              <table width="100%%" cellpadding="0" cellspacing="0" style="background:#F7F3EE;padding:40px 16px;">
+                <tr><td align="center">
+                  <table width="520" cellpadding="0" cellspacing="0" style="max-width:520px;width:100%%;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(194,97,122,0.10);">
+                    <tr>
+                      <td align="center" style="background:#ffffff;padding:28px 32px 20px;border-bottom:3px solid #C2617A;">
+                        <img src="cid:mamasalama-logo" alt="Mama Salama" style="max-width:320px;width:100%%;height:auto;display:block;margin:0 auto;" />
+                      </td>
+                    </tr>
+                    <tr>
+                      <td style="padding:36px 40px 32px;">
+                        <h2 style="margin:0 0 4px;font-size:18px;color:#3D2B34;">Bienvenue sur Mama Salama</h2>
+                        <p style="margin:0 0 20px;font-size:13px;color:#A08898;direction:rtl;">مرحباً بك في ماما سلامة</p>
+                        <p style="margin:0 0 16px;font-size:15px;color:#5C4A50;line-height:1.7;">
+                          Bonjour Dr %s,<br><br>
+                          Votre compte médecin a été créé sur la plateforme Mama Salama.
+                          Utilisez les informations ci-dessous pour vous connecter.
+                        </p>
+                        <p style="margin:0 0 24px;font-size:14px;color:#A08898;direction:rtl;line-height:1.7;">
+                          مرحباً الدكتور %s، تم إنشاء حسابك على منصة ماما سلامة. استخدم المعلومات أدناه لتسجيل الدخول.
+                        </p>
+                        <table width="100%%" cellpadding="0" cellspacing="0" style="margin-bottom:24px;">
+                          <tr>
+                            <td style="background:#FAF0F2;border-radius:10px;padding:20px 24px;">
+                              <p style="margin:0 0 8px;font-size:13px;color:#A08898;">Adresse e-mail · البريد الإلكتروني</p>
+                              <p style="margin:0 0 16px;font-size:15px;font-weight:600;color:#3D2B34;">%s</p>
+                              <p style="margin:0 0 8px;font-size:13px;color:#A08898;">Mot de passe temporaire · كلمة المرور المؤقتة</p>
+                              <p style="margin:0;font-size:18px;font-weight:700;color:#C2617A;font-family:'Courier New',monospace;letter-spacing:2px;">%s</p>
+                            </td>
+                          </tr>
+                        </table>
+                        <table width="100%%" cellpadding="0" cellspacing="0">
+                          <tr>
+                            <td align="center">
+                              <a href="%s" style="display:inline-block;background:#C2617A;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:14px 36px;border-radius:8px;">
+                                Se connecter · تسجيل الدخول
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+                        <p style="margin:20px 0 0;font-size:12px;color:#A08898;text-align:center;">
+                          Ou copiez ce lien : <span style="color:#C2617A;word-break:break-all;">%s</span>
+                        </p>
+                        <p style="margin:16px 0 0;font-size:12px;color:#A08898;text-align:center;">
+                          Veuillez changer votre mot de passe après la première connexion.<br>
+                          <span style="direction:rtl;display:block;margin-top:4px;">يرجى تغيير كلمة المرور بعد تسجيل الدخول الأول.</span>
+                        </p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="background:#F7F3EE;padding:20px 32px;border-top:1px solid #EDE8E3;">
+                        <p style="margin:0;font-size:12px;color:#A08898;">© 2026 Mama Salama · رعاية الأمومة بالمغرب</p>
+                      </td>
+                    </tr>
+                  </table>
+                </td></tr>
+              </table>
+            </body>
+            </html>
+            """.formatted(fullName, fullName, doctorEmail, tempPassword, loginUrl, loginUrl);
         send(doctorEmail, "ماما سلامة | Compte médecin créé", html);
     }
 

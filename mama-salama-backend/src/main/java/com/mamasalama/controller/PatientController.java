@@ -11,8 +11,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -26,9 +25,8 @@ public class PatientController {
 
     @GetMapping("/profile")
     @Operation(summary = "Get the authenticated patient's profile")
-    public ResponseEntity<ApiResponse<PatientProfileResponse>> getProfile(
-            @AuthenticationPrincipal UserDetails userDetails) {
-        PatientProfileResponse response = profileService.getProfile(userDetails.getUsername());
+    public ResponseEntity<ApiResponse<PatientProfileResponse>> getProfile(Authentication auth) {
+        PatientProfileResponse response = profileService.getProfile(auth.getName());
         return ResponseEntity.ok(ApiResponse.success(response, "Profile retrieved successfully"));
     }
 
@@ -36,8 +34,8 @@ public class PatientController {
     @Operation(summary = "Create a new patient profile")
     public ResponseEntity<ApiResponse<PatientProfileResponse>> createProfile(
             @Valid @RequestBody PatientProfileRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        PatientProfileResponse response = profileService.createProfile(request, userDetails.getUsername());
+            Authentication auth) {
+        PatientProfileResponse response = profileService.createProfile(request, auth.getName());
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(ApiResponse.success(response, "Profile created successfully"));
     }
@@ -46,8 +44,8 @@ public class PatientController {
     @Operation(summary = "Update the patient's profile")
     public ResponseEntity<ApiResponse<PatientProfileResponse>> updateProfile(
             @Valid @RequestBody PatientProfileRequest request,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        PatientProfileResponse response = profileService.updateProfile(request, userDetails.getUsername());
+            Authentication auth) {
+        PatientProfileResponse response = profileService.updateProfile(request, auth.getName());
         return ResponseEntity.ok(ApiResponse.success(response, "Profile updated successfully"));
     }
 }
