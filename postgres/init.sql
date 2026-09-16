@@ -1,1 +1,1 @@
-CREATE SCHEMA IF NOT EXISTS keycloak;
+CREATE DATABASE keycloak_db;
