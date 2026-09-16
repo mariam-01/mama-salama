@@ -1,5 +1,6 @@
 package com.mamasalama.service;
 
+import com.mamasalama.config.KeycloakAdminClient;
 import com.mamasalama.entity.OtpToken;
 import com.mamasalama.entity.User;
 import com.mamasalama.enums.OtpChannel;
@@ -27,6 +28,7 @@ public class OtpService {
     private final UserRepository userRepository;
     private final EmailService emailService;
     private final SmsService smsService;
+    private final KeycloakAdminClient keycloakAdminClient;
 
     @Transactional
     public void generateAndSend(User user, OtpChannel channel) {
@@ -79,6 +81,7 @@ public class OtpService {
         otpTokenRepository.save(otp);
         user.setEnabled(true);
         userRepository.save(user);
+        keycloakAdminClient.setEmailVerified(email);
         log.info("Account verified for {}", email);
     }
 
