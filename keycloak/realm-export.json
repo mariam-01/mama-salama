@@ -92,10 +92,7 @@
       "serviceAccountsEnabled": true,
       "secret": "mama-salama-backend-secret",
       "protocol": "openid-connect",
-      "authorizationServicesEnabled": false,
-      "serviceAccountClientRoles": {
-        "realm-management": ["realm-admin"]
-      }
+      "authorizationServicesEnabled": false
     }
   ],
   "clientScopes": [
