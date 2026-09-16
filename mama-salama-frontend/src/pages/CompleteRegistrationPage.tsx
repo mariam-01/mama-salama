@@ -1,16 +1,13 @@
 import { useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { completeInvite } from '../api/auth'
-import { useAuth } from '../context/AuthContext'
-import { getRoleFromToken, getHomeForRole } from '../utils/auth'
+import keycloak from '../keycloak'
 import Logo from '../components/Logo'
 import LoadingSpinner from '../components/LoadingSpinner'
 
 export default function CompleteRegistrationPage() {
   const [params] = useSearchParams()
-  const navigate = useNavigate()
-  const { login } = useAuth()
   const token = params.get('token') ?? ''
 
   const [password, setPassword] = useState('')
@@ -18,13 +15,15 @@ export default function CompleteRegistrationPage() {
   const [phone, setPhone] = useState('')
   const [showPwd, setShowPwd] = useState(false)
   const [validationError, setValidationError] = useState<string | null>(null)
+  const [done, setDone] = useState(false)
 
   const { mutate, isPending, data: apiResult, error } = useMutation({
     mutationFn: () => completeInvite({ token, password, phone: phone || undefined }),
     onSuccess: (res) => {
-      if (res.success && res.data) {
-        login(res.data.token, res.data.userId)
-        navigate(getHomeForRole(getRoleFromToken(res.data.token)))
+      if (res.success) {
+        setDone(true)
+        // Short delay then redirect to Keycloak login
+        setTimeout(() => keycloak.login({ redirectUri: window.location.origin + '/doctor/dashboard' }), 2000)
       }
     },
   })
@@ -37,7 +36,7 @@ export default function CompleteRegistrationPage() {
     setValidationError(null)
     if (password.length < 8) { setValidationError('Le mot de passe doit contenir au moins 8 caractères.'); return }
     if (password !== confirm) { setValidationError('Les mots de passe ne correspondent pas.'); return }
-    if (!token) { setValidationError('Lien d\'invitation manquant ou invalide.'); return }
+    if (!token) { setValidationError("Lien d'invitation manquant ou invalide."); return }
     mutate()
   }
 
@@ -49,7 +48,19 @@ export default function CompleteRegistrationPage() {
         <div className="bg-white rounded-2xl border border-sand-mid p-8 max-w-sm w-full text-center space-y-3">
           <div className="text-4xl">🔗</div>
           <h2 className="font-serif text-lg text-ink">Lien invalide</h2>
-          <p className="text-xs text-ink-light">Ce lien d'invitation est manquant ou malformé. Contactez l'administrateur.</p>
+          <p className="text-xs text-ink-light">Ce lien est manquant ou malformé. Contactez l'administrateur.</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (done) {
+    return (
+      <div className="min-h-screen bg-blush flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl border border-sand-mid p-8 max-w-sm w-full text-center space-y-3">
+          <div className="text-4xl">✅</div>
+          <h2 className="font-serif text-lg text-ink">Compte créé avec succès!</h2>
+          <p className="text-xs text-ink-light">Redirection vers la page de connexion...</p>
         </div>
       </div>
     )
@@ -63,7 +74,6 @@ export default function CompleteRegistrationPage() {
 
       <div className="flex-1 flex items-center justify-center p-6">
         <div className="w-full max-w-md">
-          {/* Header card */}
           <div className="bg-white rounded-2xl border border-sand-mid overflow-hidden shadow-sm">
             <div className="bg-mauve-light px-6 py-6 border-b border-sand-mid text-center">
               <div className="w-14 h-14 rounded-2xl bg-mauve flex items-center justify-center text-2xl text-white mx-auto mb-3">

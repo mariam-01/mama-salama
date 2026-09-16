@@ -1,5 +1,6 @@
 import axios from 'axios'
 import type { AxiosError } from 'axios'
+import keycloak from '../keycloak'
 
 const BASE_URL = '/api/core'
 
@@ -8,42 +9,46 @@ const baseHeaders = {
   'ngrok-skip-browser-warning': 'true',
 }
 
-// Public client — no auth header, no 401 redirect (used for register/login/OTP)
+// Public client — no auth (used for /auth/complete-invite)
 export const publicClient = axios.create({
   baseURL: BASE_URL,
   headers: baseHeaders,
 })
 
-// Authenticated client — attaches JWT and redirects on 401
+// Authenticated client — attaches Keycloak token, refreshes if needed
 const apiClient = axios.create({
   baseURL: BASE_URL,
   headers: baseHeaders,
 })
 
-function redirectToLogin() {
-  localStorage.removeItem('token')
-  localStorage.removeItem('userId')
-  if (window.location.pathname !== '/login') {
-    window.location.href = '/login'
+apiClient.interceptors.request.use(async (config) => {
+  // Refresh token proactively if it expires within 30 seconds
+  try {
+    await keycloak.updateToken(30)
+  } catch {
+    keycloak.login()
+    return Promise.reject(new Error('Session expired'))
   }
-}
 
-apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('token')
-  if (!token) {
-    redirectToLogin()
-    return Promise.reject(new Error('No token'))
+  if (!keycloak.token) {
+    keycloak.login()
+    return Promise.reject(new Error('Not authenticated'))
   }
-  config.headers.Authorization = `Bearer ${token}`
+
+  config.headers.Authorization = `Bearer ${keycloak.token}`
   return config
 })
 
 apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
-    // 401 = expired/invalid token, 403 = forbidden (some backends use this for bad JWTs)
-    if (error.response?.status === 401 || error.response?.status === 403) {
-      redirectToLogin()
+    if (error.response?.status === 401) {
+      keycloak.login()
+    } else if (error.response?.status === 403) {
+      const msg = (error.response.data as { message?: string })?.message ?? ''
+      if (msg.includes('Compte non vérifié') && window.location.pathname !== '/otp') {
+        window.location.replace('/otp')
+      }
     }
     return Promise.reject(error)
   }

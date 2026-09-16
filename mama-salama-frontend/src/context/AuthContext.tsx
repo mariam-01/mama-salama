@@ -1,39 +1,63 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react'
-import { getRoleFromToken, type UserRole } from '../utils/auth'
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
+import keycloak from '../keycloak'
+import type { UserRole } from '../utils/auth'
+import { getHomeForRole } from '../utils/auth'
 
 interface AuthContextType {
-  token: string | null
-  userId: string | null
-  role: UserRole
   isAuthenticated: boolean
-  login: (token: string, userId: string) => void
+  isLoading: boolean
+  role: UserRole
+  email: string | null
+  token: string | null
+  login: () => void
   logout: () => void
+  register: () => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'))
-  const [userId, setUserId] = useState<string | null>(() => localStorage.getItem('userId'))
+  const [isAuthenticated, setIsAuthenticated] = useState(keycloak.authenticated ?? false)
+  const [isLoading, setIsLoading] = useState(false)
 
-  const role = getRoleFromToken(token)
+  useEffect(() => {
+    const onAuthSuccess = () => setIsAuthenticated(true)
+    const onAuthLogout = () => setIsAuthenticated(false)
+    const onAuthRefreshError = () => {
+      setIsAuthenticated(false)
+      keycloak.login()
+    }
 
-  const login = useCallback((newToken: string, newUserId: string) => {
-    localStorage.setItem('token', newToken)
-    localStorage.setItem('userId', newUserId)
-    setToken(newToken)
-    setUserId(newUserId)
+    keycloak.onAuthSuccess = onAuthSuccess
+    keycloak.onAuthLogout = onAuthLogout
+    keycloak.onAuthRefreshError = onAuthRefreshError
+
+    return () => {
+      keycloak.onAuthSuccess = undefined
+      keycloak.onAuthLogout = undefined
+      keycloak.onAuthRefreshError = undefined
+    }
   }, [])
 
+  const role = getRoleFromKeycloak()
+  const email = (keycloak.tokenParsed as ExtendedTokenParsed | undefined)?.email ?? null
+  const token = keycloak.token ?? null
+
+  const login = useCallback(() => {
+    setIsLoading(true)
+    keycloak.login({ redirectUri: window.location.origin + getHomeForRole(role) })
+  }, [role])
+
   const logout = useCallback(() => {
-    localStorage.removeItem('token')
-    localStorage.removeItem('userId')
-    setToken(null)
-    setUserId(null)
+    keycloak.logout({ redirectUri: window.location.origin })
+  }, [])
+
+  const register = useCallback(() => {
+    keycloak.register({ redirectUri: window.location.origin + '/profile' })
   }, [])
 
   return (
-    <AuthContext.Provider value={{ token, userId, role, isAuthenticated: !!token, login, logout }}>
+    <AuthContext.Provider value={{ isAuthenticated, isLoading, role, email, token, login, logout, register }}>
       {children}
     </AuthContext.Provider>
   )
@@ -43,4 +67,17 @@ export function useAuth() {
   const context = useContext(AuthContext)
   if (!context) throw new Error('useAuth must be used within AuthProvider')
   return context
+}
+
+interface ExtendedTokenParsed {
+  realm_access?: { roles?: string[] }
+  email?: string
+}
+
+function getRoleFromKeycloak(): UserRole {
+  const parsed = keycloak.tokenParsed as ExtendedTokenParsed | undefined
+  const roles = parsed?.realm_access?.roles ?? []
+  if (roles.includes('ADMIN')) return 'ADMIN'
+  if (roles.includes('DOCTOR')) return 'DOCTOR'
+  return 'PATIENT'
 }
