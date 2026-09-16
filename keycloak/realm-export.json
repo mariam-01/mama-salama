@@ -1,0 +1,157 @@
+{
+  "realm": "mama-salama",
+  "enabled": true,
+  "loginWithEmailAllowed": true,
+  "registrationEmailAsUsername": true,
+  "duplicateEmailsAllowed": false,
+  "registrationAllowed": true,
+  "verifyEmail": false,
+  "resetPasswordAllowed": true,
+  "bruteForceProtected": true,
+  "failureFactor": 5,
+  "waitIncrementSeconds": 60,
+  "maxFailureWaitSeconds": 900,
+  "minimumQuickLoginWaitSeconds": 60,
+  "maxDeltaTimeSeconds": 43200,
+  "sslRequired": "none",
+  "accessTokenLifespan": 300,
+  "refreshTokenMaxReuse": 0,
+  "ssoSessionIdleTimeout": 1800,
+  "ssoSessionMaxLifespan": 36000,
+  "roles": {
+    "realm": [
+      {
+        "name": "PATIENT",
+        "description": "Regular patient role",
+        "composite": false
+      },
+      {
+        "name": "DOCTOR",
+        "description": "Medical doctor role",
+        "composite": false
+      },
+      {
+        "name": "ADMIN",
+        "description": "Platform administrator role",
+        "composite": false
+      }
+    ]
+  },
+  "defaultRoles": ["PATIENT"],
+  "clients": [
+    {
+      "clientId": "mama-salama-frontend",
+      "name": "Mama Salama Frontend",
+      "description": "Public SPA client for the React frontend",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:5173/*",
+        "http://localhost/*",
+        "http://localhost:80/*"
+      ],
+      "webOrigins": [
+        "http://localhost:5173",
+        "http://localhost",
+        "+"
+      ],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "roles",
+        "profile",
+        "basic",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt",
+        "organization",
+        "aud"
+      ],
+      "protocol": "openid-connect"
+    },
+    {
+      "clientId": "mama-salama-backend",
+      "name": "Mama Salama Backend",
+      "description": "Confidential service-account client for backend admin operations",
+      "enabled": true,
+      "publicClient": false,
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "secret": "mama-salama-backend-secret",
+      "protocol": "openid-connect",
+      "authorizationServicesEnabled": false,
+      "serviceAccountClientRoles": {
+        "realm-management": ["realm-admin"]
+      }
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "email",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "email",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-attribute-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "email",
+            "introspection.token.claim": "true",
+            "userinfo.token.claim": "true",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "email",
+            "jsonType.label": "String"
+          }
+        }
+      ]
+    },
+    {
+      "name": "roles",
+      "protocol": "openid-connect",
+      "attributes": {
+        "include.in.token.scope": "true"
+      },
+      "protocolMappers": [
+        {
+          "name": "realm roles",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "user.attribute": "foo",
+            "introspection.token.claim": "true",
+            "access.token.claim": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "multivalued": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "passwordPolicy": "length(8)",
+  "loginTheme": "mama-salama",
+  "accountTheme": "keycloak.v2",
+  "emailTheme": "keycloak",
+  "internationalizationEnabled": true,
+  "supportedLocales": ["fr", "en", "ar"],
+  "defaultLocale": "fr"
+}

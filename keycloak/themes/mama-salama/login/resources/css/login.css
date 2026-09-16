@@ -1,0 +1,587 @@
+/* ── Design tokens ────────────────────────────────────────────────────────── */
+:root {
+  --ms-rose:        #C2617A;
+  --ms-rose-dark:   #8B3A50;
+  --ms-rose-light:  #F5DDE4;
+  --ms-rose-mid:    #E8A0B0;
+  --ms-blush:       #FAF0F3;
+  --ms-sand:        #F7F3EE;
+  --ms-sand-mid:    #EDE6DC;
+  --ms-ink:         #2D1F28;
+  --ms-ink-mid:     #6B5560;
+  --ms-ink-light:   #A08898;
+  --ms-gold:        #C47E2A;
+}
+
+/* ── Reset ────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+  color: var(--ms-ink);
+  background: var(--ms-blush);
+}
+
+/* ── Page wrapper ─────────────────────────────────────────────────────────── */
+.ms-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--ms-blush);
+}
+
+/* ── Navbar ───────────────────────────────────────────────────────────────── */
+.ms-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.875rem 2.5rem;
+  background: #ffffff;
+  border-bottom: 1px solid var(--ms-rose-light);
+  gap: 1.5rem;
+}
+
+.ms-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  text-decoration: none;
+  flex-shrink: 0;
+}
+
+.ms-brand svg { flex-shrink: 0; }
+
+.ms-brand-name {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.ms-brand-fr {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--ms-ink);
+}
+
+.ms-brand-ar {
+  font-size: 0.7rem;
+  color: var(--ms-ink-light);
+  letter-spacing: 0.03em;
+}
+
+.ms-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  flex: 1;
+}
+
+.ms-nav-links a {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--ms-ink-mid);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.ms-nav-links a:hover { color: var(--ms-rose); }
+
+.ms-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+/* Locale pills */
+.ms-locales {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.ms-locale-btn {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid var(--ms-rose-mid);
+  background: var(--ms-blush);
+  color: var(--ms-rose-dark);
+  text-decoration: none;
+  transition: background 0.15s;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.ms-locale-btn:hover,
+.ms-locale-btn.active {
+  background: var(--ms-rose-light);
+  color: var(--ms-rose-dark);
+}
+
+.ms-locale-btn.active {
+  background: var(--ms-rose);
+  color: #fff;
+  border-color: var(--ms-rose);
+}
+
+/* Nav CTA button (S'inscrire) */
+.ms-nav-cta {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 1.125rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  background: var(--ms-rose);
+  color: #ffffff;
+  border: 1.5px solid var(--ms-rose);
+}
+
+.ms-nav-cta:hover {
+  background: var(--ms-rose-dark);
+  border-color: var(--ms-rose-dark);
+  color: #ffffff;
+}
+
+.ms-nav-cta.ms-nav-cta-outline {
+  background: transparent;
+  color: var(--ms-rose);
+  border-color: var(--ms-rose);
+}
+
+.ms-nav-cta.ms-nav-cta-outline:hover {
+  background: var(--ms-rose-light);
+}
+
+/* ── Main (login centered) ────────────────────────────────────────────────── */
+.ms-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5rem 1rem;
+}
+
+/* ── Card (login + forgot password) ──────────────────────────────────────── */
+.ms-card {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 4px 32px rgba(45, 31, 40, 0.09);
+  border: 1px solid var(--ms-rose-light);
+  width: 100%;
+  max-width: 440px;
+  overflow: hidden;
+}
+
+.ms-card-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.25rem 2rem 1.5rem;
+  border-bottom: 1px solid var(--ms-rose-light);
+}
+
+.ms-logo-icon {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 1.25rem;
+  flex-shrink: 0;
+}
+
+.ms-card-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--ms-ink);
+  margin: 0 0 0.375rem;
+  line-height: 1.35;
+}
+
+.ms-card-subtitle {
+  font-size: 0.875rem;
+  color: var(--ms-ink-light);
+  margin: 0;
+}
+
+.ms-card-divider {
+  height: 1px;
+  background: var(--ms-rose-light);
+  display: none; /* header already has border-bottom */
+}
+
+.ms-card-body {
+  padding: 1.75rem 2rem;
+}
+
+.ms-card-footer {
+  padding: 1rem 2rem 1.75rem;
+  text-align: center;
+  border-top: 1px solid var(--ms-rose-light);
+  font-size: 0.875rem;
+  color: var(--ms-ink-mid);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+}
+
+/* ── Form fields ──────────────────────────────────────────────────────────── */
+.ms-field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.ms-field label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ms-ink-mid);
+  margin-bottom: 0.375rem;
+}
+
+.ms-required { color: var(--ms-rose); margin-left: 2px; }
+
+.ms-input {
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--ms-sand-mid);
+  background: #ffffff;
+  padding: 0 0.875rem;
+  font-size: 0.875rem;
+  font-family: 'DM Sans', sans-serif;
+  color: var(--ms-ink);
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  width: 100%;
+}
+
+.ms-input::placeholder { color: var(--ms-ink-light); }
+
+.ms-input:focus {
+  border-color: var(--ms-rose);
+  box-shadow: 0 0 0 3px rgba(194, 97, 122, 0.15);
+}
+
+.ms-input.ms-input-err {
+  border-color: var(--ms-rose);
+}
+
+.ms-field-err {
+  font-size: 0.75rem;
+  color: var(--ms-rose-dark);
+  margin-top: 0.3rem;
+}
+
+/* Password field with eye toggle */
+.ms-pwd-wrap {
+  position: relative;
+  display: flex;
+}
+
+.ms-pwd-wrap .ms-input {
+  padding-right: 2.75rem;
+}
+
+.ms-eye-btn {
+  position: absolute;
+  right: 0;
+  top: 0;
+  height: 44px;
+  width: 44px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ms-ink-light);
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.ms-eye-btn:hover { color: var(--ms-ink); }
+
+/* Forgot password row */
+.ms-forgot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+/* ── Primary button ───────────────────────────────────────────────────────── */
+.ms-btn-primary {
+  display: block;
+  width: 100%;
+  height: 44px;
+  border-radius: 999px;
+  background: var(--ms-rose);
+  color: #ffffff;
+  border: none;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: background 0.2s;
+  margin-top: 0.75rem;
+}
+
+.ms-btn-primary:hover { background: var(--ms-rose-dark); }
+
+.ms-btn-primary:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(194, 97, 122, 0.25);
+}
+
+.ms-btn-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* ── Links ────────────────────────────────────────────────────────────────── */
+.ms-link {
+  font-size: 0.8125rem;
+  color: var(--ms-rose);
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.ms-link:hover {
+  color: var(--ms-rose-dark);
+  text-decoration: underline;
+}
+
+.ms-link.ms-link-bold {
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+/* ── Alerts ───────────────────────────────────────────────────────────────── */
+.ms-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  line-height: 1.45;
+}
+
+.ms-alert svg { flex-shrink: 0; margin-top: 1px; }
+
+.ms-alert-error {
+  background: #FDEAEA;
+  color: var(--ms-rose-dark);
+  border: 1px solid var(--ms-rose-mid);
+}
+
+.ms-alert-success {
+  background: #E8F4EC;
+  color: #2D5237;
+  border: 1px solid #9CC9A8;
+}
+
+.ms-alert-warning {
+  background: #FEF6E4;
+  color: #7A4A0A;
+  border: 1px solid #F0C97A;
+}
+
+.ms-alert-info {
+  background: var(--ms-rose-light);
+  color: var(--ms-ink-mid);
+  border: 1px solid var(--ms-rose-mid);
+}
+
+/* ── Register: two-column layout ─────────────────────────────────────────── */
+.ms-register-layout {
+  display: flex;
+  flex: 1;
+  min-height: calc(100vh - 65px);
+}
+
+.ms-register-left {
+  flex: 1;
+  background: linear-gradient(145deg, var(--ms-rose) 0%, var(--ms-rose-dark) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.ms-register-left::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 80%, rgba(255,255,255,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255,255,255,0.06) 0%, transparent 50%);
+}
+
+.ms-register-left-content {
+  position: relative;
+  z-index: 1;
+  max-width: 420px;
+  color: #ffffff;
+}
+
+.ms-register-tagline {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: rgba(255,255,255,0.75);
+  text-transform: uppercase;
+  margin-bottom: 1.5rem;
+}
+
+.ms-register-heading {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2.25rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #ffffff;
+  margin: 0 0 1.25rem;
+}
+
+.ms-register-desc {
+  font-size: 1rem;
+  color: rgba(255,255,255,0.85);
+  line-height: 1.7;
+  margin: 0 0 2rem;
+}
+
+.ms-register-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ms-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.875rem;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  color: #ffffff;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+
+/* Right column — form card */
+.ms-register-right {
+  flex: 1;
+  background: var(--ms-blush);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+}
+
+.ms-register-card {
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 4px 32px rgba(45, 31, 40, 0.09);
+  border: 1px solid var(--ms-rose-light);
+  width: 100%;
+  max-width: 400px;
+  overflow: hidden;
+  padding: 2rem;
+}
+
+.ms-register-card-header {
+  margin-bottom: 1.5rem;
+}
+
+.ms-register-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.375rem;
+  font-weight: 600;
+  color: var(--ms-ink);
+  margin: 0 0 0.25rem;
+}
+
+.ms-register-subtitle {
+  font-size: 0.8125rem;
+  color: var(--ms-ink-light);
+  margin: 0;
+}
+
+.ms-register-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  margin-top: 1.25rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--ms-rose-light);
+  font-size: 0.875rem;
+  color: var(--ms-ink-mid);
+}
+
+/* ── RTL overrides ────────────────────────────────────────────────────────── */
+[dir="rtl"] .ms-eye-btn {
+  right: auto;
+  left: 0;
+}
+
+[dir="rtl"] .ms-pwd-wrap .ms-input {
+  padding-right: 0.875rem;
+  padding-left: 2.75rem;
+}
+
+[dir="rtl"] .ms-forgot {
+  justify-content: flex-start;
+}
+
+[dir="rtl"] .ms-card-header,
+[dir="rtl"] .ms-card-footer,
+[dir="rtl"] .ms-register-footer {
+  direction: rtl;
+}
+
+[dir="rtl"] .ms-field label {
+  text-align: right;
+}
+
+[dir="rtl"] .ms-brand-name {
+  text-align: right;
+}
+
+[dir="rtl"] .ms-register-left-content {
+  text-align: right;
+}
+
+[dir="rtl"] .ms-register-badges {
+  justify-content: flex-end;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .ms-register-layout { flex-direction: column; }
+  .ms-register-left { padding: 2.5rem 1.5rem; min-height: 280px; }
+  .ms-register-right { width: 100%; padding: 2rem 1rem; }
+  .ms-register-heading { font-size: 1.75rem; }
+  .ms-nav-links { display: none; }
+}
+
+@media (max-width: 500px) {
+  .ms-nav { padding: 0.75rem 1rem; }
+  .ms-card-body, .ms-card-header { padding-left: 1.25rem; padding-right: 1.25rem; }
+  .ms-card-footer { padding-left: 1.25rem; padding-right: 1.25rem; }
+  .ms-register-card { padding: 1.5rem 1.25rem; }
+}
