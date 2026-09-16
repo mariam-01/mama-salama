@@ -18,7 +18,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -42,8 +42,6 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getStats());
     }
 
-    // ── Patients ──────────────────────────────────────────────────────────────
-
     @GetMapping("/patients")
     @Operation(summary = "List patients, optionally filtered by name or email")
     public ResponseEntity<List<AdminPatientResponse>> getPatients(
@@ -59,9 +57,6 @@ public class AdminController {
         return ResponseEntity.ok(adminService.updatePatientStatus(patientId, request));
     }
 
-
-    // ── Doctors ───────────────────────────────────────────────────────────────
-
     @GetMapping("/doctors")
     @Operation(summary = "List doctors, optionally filtered by name or email")
     public ResponseEntity<List<AdminDoctorResponse>> getDoctors(
@@ -73,9 +68,9 @@ public class AdminController {
     @Operation(summary = "Create a doctor account directly (bypasses invite code)")
     public ResponseEntity<AdminDoctorResponse> createDoctor(
             @Valid @RequestBody DoctorCreateRequest request,
-            @AuthenticationPrincipal UserDetails user) {
+            @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(adminService.createDoctor(request, user.getUsername()));
+                .body(adminService.createDoctor(request, jwt.getClaimAsString("email")));
     }
 
     @PutMapping("/doctors/{doctorId}/status")
@@ -86,8 +81,6 @@ public class AdminController {
         return ResponseEntity.ok(adminService.updateDoctorStatus(doctorId, request));
     }
 
-    // ── Alerts ────────────────────────────────────────────────────────────────
-
     @GetMapping("/alerts")
     @Operation(summary = "List all emergency alerts, optionally filtered by status")
     public ResponseEntity<List<EmergencyAlertResponse>> getAlerts(
@@ -95,15 +88,13 @@ public class AdminController {
         return ResponseEntity.ok(adminService.getAlerts(status));
     }
 
-    // ── Invite Codes ──────────────────────────────────────────────────────────
-
     @PostMapping("/invite-codes")
     @Operation(summary = "Send a doctor invite email with a registration link")
     public ResponseEntity<InviteCodeResponse> sendInvite(
             @Valid @RequestBody DoctorInviteRequest request,
-            @AuthenticationPrincipal UserDetails user) {
+            @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(adminService.sendInvite(request, user.getUsername()));
+                .body(adminService.sendInvite(request, jwt.getClaimAsString("email")));
     }
 
     @GetMapping("/invite-codes")
@@ -112,16 +103,14 @@ public class AdminController {
         return ResponseEntity.ok(adminService.listInviteCodes());
     }
 
-    // ── Knowledge Base ────────────────────────────────────────────────────────
-
     @PostMapping(value = "/knowledge-base", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @Operation(summary = "Upload a document to the AI knowledge base")
     public ResponseEntity<KnowledgeBaseDocumentResponse> uploadDocument(
             @RequestPart("file") MultipartFile file,
             @RequestParam("language") Language language,
-            @AuthenticationPrincipal UserDetails user) {
+            @AuthenticationPrincipal Jwt jwt) {
         return ResponseEntity.status(HttpStatus.CREATED)
-                .body(knowledgeBaseService.uploadDocument(file, language, user.getUsername()));
+                .body(knowledgeBaseService.uploadDocument(file, language, jwt.getClaimAsString("email")));
     }
 
     @GetMapping("/knowledge-base")
