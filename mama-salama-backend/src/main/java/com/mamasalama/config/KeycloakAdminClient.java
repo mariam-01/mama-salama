@@ -26,6 +26,8 @@ public class KeycloakAdminClient {
     private final String realm;
     private final String adminClientId;
     private final String adminClientSecret;
+    private final String masterAdminUsername;
+    private final String masterAdminPassword;
     private final ObjectMapper objectMapper;
 
     public KeycloakAdminClient(
@@ -33,12 +35,105 @@ public class KeycloakAdminClient {
             @Value("${keycloak.realm}") String realm,
             @Value("${keycloak.admin-client-id}") String adminClientId,
             @Value("${keycloak.admin-client-secret}") String adminClientSecret,
+            @Value("${keycloak.master-admin-username}") String masterAdminUsername,
+            @Value("${keycloak.master-admin-password}") String masterAdminPassword,
             ObjectMapper objectMapper) {
         this.realm = realm;
         this.adminClientId = adminClientId;
         this.adminClientSecret = adminClientSecret;
+        this.masterAdminUsername = masterAdminUsername;
+        this.masterAdminPassword = masterAdminPassword;
         this.objectMapper = objectMapper;
         this.restClient = RestClient.create(serverUrl);
+    }
+
+    private String getMasterAdminToken() {
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("grant_type", "password");
+        form.add("client_id", "admin-cli");
+        form.add("username", masterAdminUsername);
+        form.add("password", masterAdminPassword);
+
+        String body = restClient.post()
+                .uri("/realms/master/protocol/openid-connect/token")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(form)
+                .retrieve()
+                .body(String.class);
+
+        try {
+            return objectMapper.readTree(body).get("access_token").asText();
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to obtain Keycloak master admin token", e);
+        }
+    }
+
+    public void ensureServiceAccountHasRealmAdmin() {
+        try {
+            String token = getMasterAdminToken();
+
+            // Find the mama-salama-backend client's internal ID
+            String clientsBody = restClient.get()
+                    .uri("/admin/realms/{realm}/clients?clientId={clientId}", realm, adminClientId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .retrieve().body(String.class);
+            JsonNode clients = objectMapper.readTree(clientsBody);
+            if (!clients.isArray() || clients.isEmpty()) {
+                log.warn("Could not find client {} in Keycloak", adminClientId);
+                return;
+            }
+            String backendClientInternalId = clients.get(0).get("id").asText();
+
+            // Get the service account user for this client
+            String saUserBody = restClient.get()
+                    .uri("/admin/realms/{realm}/clients/{id}/service-account-user", realm, backendClientInternalId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .retrieve().body(String.class);
+            String serviceAccountUserId = objectMapper.readTree(saUserBody).get("id").asText();
+
+            // Find realm-management client's internal ID
+            String rmBody = restClient.get()
+                    .uri("/admin/realms/{realm}/clients?clientId=realm-management", realm)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .retrieve().body(String.class);
+            String realmMgmtId = objectMapper.readTree(rmBody).get(0).get("id").asText();
+
+            // Check if realm-admin is already assigned
+            String existingRoles = restClient.get()
+                    .uri("/admin/realms/{realm}/users/{userId}/role-mappings/clients/{clientId}",
+                            realm, serviceAccountUserId, realmMgmtId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .retrieve().body(String.class);
+            JsonNode existing = objectMapper.readTree(existingRoles);
+            if (existing.isArray()) {
+                for (JsonNode r : existing) {
+                    if ("realm-admin".equals(r.get("name").asText())) {
+                        log.info("Service account already has realm-admin — skipping");
+                        return;
+                    }
+                }
+            }
+
+            // Get the realm-admin role representation
+            String roleBody = restClient.get()
+                    .uri("/admin/realms/{realm}/clients/{clientId}/roles/realm-admin", realm, realmMgmtId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .retrieve().body(String.class);
+            JsonNode role = objectMapper.readTree(roleBody);
+
+            // Assign it
+            restClient.post()
+                    .uri("/admin/realms/{realm}/users/{userId}/role-mappings/clients/{clientId}",
+                            realm, serviceAccountUserId, realmMgmtId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(List.of(Map.of("id", role.get("id").asText(), "name", "realm-admin")))
+                    .retrieve().toBodilessEntity();
+
+            log.info("Assigned realm-admin to service account of {}", adminClientId);
+        } catch (Exception e) {
+            log.warn("Could not assign realm-admin to service account: {}", e.getMessage());
+        }
     }
 
     private String getAdminToken() {
@@ -149,6 +244,27 @@ public class KeycloakAdminClient {
             log.warn("Error fetching Keycloak user ID for {}: {}", email, e.getMessage());
         }
         return null;
+    }
+
+    public void setEmailVerified(String email) {
+        try {
+            String token = getAdminToken();
+            String userId = getUserId(email, token);
+            if (userId == null) {
+                log.warn("Keycloak user not found for email {}, skipping emailVerified update", email);
+                return;
+            }
+            restClient.put()
+                    .uri("/admin/realms/{realm}/users/{userId}", realm, userId)
+                    .header(HttpHeaders.AUTHORIZATION, "Bearer " + token)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .body(Map.of("emailVerified", true))
+                    .retrieve()
+                    .toBodilessEntity();
+            log.info("emailVerified set to true in Keycloak for {}", email);
+        } catch (Exception e) {
+            log.warn("Could not set emailVerified for {}: {}", email, e.getMessage());
+        }
     }
 
     public void resetPassword(String email, String newPassword) {

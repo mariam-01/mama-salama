@@ -69,6 +69,8 @@ keycloak:
   realm: mama-salama
   admin-client-id: mama-salama-backend
   admin-client-secret: ${KEYCLOAK_BACKEND_CLIENT_SECRET:mama-salama-backend-secret}
+  master-admin-username: ${KEYCLOAK_ADMIN:admin}
+  master-admin-password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
 
 application:
   frontend-url: ${FRONTEND_URL:http://localhost:5173}

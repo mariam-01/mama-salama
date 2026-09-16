@@ -26,6 +26,11 @@ public class DataSeeder implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) {
+        try {
+            keycloakAdminClient.ensureServiceAccountHasRealmAdmin();
+        } catch (Exception e) {
+            log.warn("Could not ensure service account realm-admin role: {}", e.getMessage());
+        }
         seedLocalAdmin();
         seedKeycloakAdmin();
     }
